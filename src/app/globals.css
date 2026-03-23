@@ -1,73 +1,60 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode for Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Base ── */
 body {
-  color: white;
+  color: #111827; /* gray-900 */
+  background-color: #f9fafb; /* gray-50 */
 }
 
-/* Preserve dark text inside form controls */
-input,
-select,
-textarea,
-option {
-  color: black;
+.dark body {
+  color: #f9fafb;
+  background-color: #111827;
 }
 
-.browser-css h1 {
-  font-size: 2em;
-  font-weight: bold;
-  margin: 0.5em 0;
+/* Form controls always have explicit colors set via Tailwind classes */
+input, select, textarea {
+  color: inherit;
 }
 
-.browser-css h2 {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin: 0.5em 0;
-}
-
-.browser-css h3 {
-  font-size: 1.25em;
-  font-weight: bold;
-  margin: 0.5em 0;
-}
-
-.browser-css p {
-  margin: 0.5em 0;
-}
-
-.browser-css ul {
-  list-style: disc;
-  padding-left: 1.5em;
-  margin: 0.5em 0;
-}
-
-.browser-css ol {
-  list-style: decimal;
-  padding-left: 1.5em;
-  margin: 0.5em 0;
-}
-
+/* ── Rich-text post content ── */
+.browser-css h1 { font-size: 2em;    font-weight: bold; margin: 0.5em 0; }
+.browser-css h2 { font-size: 1.5em;  font-weight: bold; margin: 0.5em 0; }
+.browser-css h3 { font-size: 1.25em; font-weight: bold; margin: 0.5em 0; }
+.browser-css p  { margin: 0.5em 0; }
+.browser-css ul { list-style: disc;    padding-left: 1.5em; margin: 0.5em 0; }
+.browser-css ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0; }
 .browser-css blockquote {
-  border-left: 4px solid #4b5563;
+  border-left: 4px solid #d1d5db;
   padding-left: 1em;
-  color: #9ca3af;
+  color: #6b7280;
   margin: 0.5em 0;
 }
-
+.dark .browser-css blockquote {
+  border-color: #4b5563;
+  color: #9ca3af;
+}
 .browser-css code {
-  background: #1f2937;
+  background: #f3f4f6;
   padding: 0.1em 0.3em;
   border-radius: 4px;
   font-family: monospace;
+  color: #111827;
 }
-
-.browser-css pre {
+.dark .browser-css code {
   background: #1f2937;
+  color: #f9fafb;
+}
+.browser-css pre {
+  background: #f3f4f6;
   padding: 1em;
   border-radius: 6px;
   overflow-x: auto;
 }
-
-.browser-css a {
-  color: #60a5fa;
-  text-decoration: underline;
+.dark .browser-css pre {
+  background: #1f2937;
 }
+.browser-css a { color: #2563eb; text-decoration: underline; }
+.dark .browser-css a { color: #60a5fa; }

@@ -13,8 +13,8 @@ export default async function HomePage() {
     return (
       <div className="w-full py-8 mt-4 text-center">
         <Container>
-          <h1 className="text-2xl font-bold text-gray-300">No posts found</h1>
-          <p className="text-gray-500 mt-2">There are no active posts yet.</p>
+          <h1 className="text-2xl font-bold text-gray-600 dark:text-gray-300">No posts found</h1>
+          <p className="text-gray-400 dark:text-gray-500 mt-2">There are no active posts yet.</p>
         </Container>
       </div>
     );
@@ -24,8 +24,8 @@ export default async function HomePage() {
     <div className="w-full py-8">
       <Container>
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-300 mb-2">Latest Posts</h1>
-          <p className="text-gray-500">Showing all active posts</p>
+          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">Latest Posts</h1>
+          <p className="text-gray-500 dark:text-gray-400">Showing all active posts</p>
         </div>
         <div className="flex flex-wrap">
           {posts.map((post) => (

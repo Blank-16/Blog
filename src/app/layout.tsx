@@ -13,7 +13,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-gray-900 text-white min-h-screen flex flex-col">
+      {/* No hardcoded dark class — ThemeToggle handles it client-side */}
+      <body className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-50 min-h-screen flex flex-col transition-colors duration-200">
         <StoreProvider>
           <AuthInitializer />
           <Header />

@@ -39,22 +39,22 @@ export default function SignupForm() {
 
   return (
     <div className="flex items-center justify-center">
-      <div className="mx-auto w-full max-w-lg bg-gray-800 rounded-xl p-10 border border-black/10 text-white">
+      <div className="mx-auto w-full max-w-lg rounded-xl p-10 border
+        bg-white border-gray-200 shadow-sm
+        dark:bg-gray-800 dark:border-gray-700">
+
         <div className="mb-2 flex justify-center">
           <span className="inline-block w-full max-w-[100px]">
             <Logo />
           </span>
         </div>
 
-        <h2 className="text-center text-2xl font-bold leading-tight">
+        <h2 className="text-center text-2xl font-bold leading-tight text-gray-900 dark:text-white">
           Sign up to create account
         </h2>
-        <p className="mt-2 text-center text-base text-gray-400">
+        <p className="mt-2 text-center text-base text-gray-500 dark:text-gray-400">
           Already have an account?&nbsp;
-          <Link
-            href="/login"
-            className="font-medium text-white transition-all duration-200 hover:underline"
-          >
+          <Link href="/login" className="font-medium text-blue-600 dark:text-blue-400 hover:underline transition-all duration-200">
             Sign In
           </Link>
         </p>
@@ -63,15 +63,9 @@ export default function SignupForm() {
 
         <form onSubmit={handleSubmit(signup)} className="mt-8">
           <div className="space-y-5">
+            <Input label="Full Name:" placeholder="Enter your full name" {...register('name', { required: true })} />
             <Input
-              label="Full Name:"
-              placeholder="Enter your full name"
-              {...register('name', { required: true })}
-            />
-            <Input
-              label="Email:"
-              placeholder="Enter your email"
-              type="email"
+              label="Email:" placeholder="Enter your email" type="email"
               {...register('email', {
                 required: true,
                 validate: {
@@ -81,15 +75,8 @@ export default function SignupForm() {
                 },
               })}
             />
-            <Input
-              label="Password:"
-              type="password"
-              placeholder="Enter your password"
-              {...register('password', { required: true })}
-            />
-            <Button type="submit" className="w-full">
-              Create Account
-            </Button>
+            <Input label="Password:" type="password" placeholder="Enter your password" {...register('password', { required: true })} />
+            <Button type="submit" className="w-full">Create Account</Button>
           </div>
         </form>
       </div>

@@ -26,7 +26,8 @@ export default async function PostPage({ params }: PageProps) {
   return (
     <div className="py-8">
       <Container>
-        <div className="w-full flex justify-center mb-4 relative border border-gray-700 rounded-xl p-2">
+        <div className="w-full flex justify-center mb-4 relative rounded-xl p-2 border
+          border-gray-200 dark:border-gray-700">
           {imageUrl && (
             <img
               src={imageUrl.toString()}
@@ -38,13 +39,13 @@ export default async function PostPage({ params }: PageProps) {
         </div>
 
         <div className="w-full mb-6">
-          <h1 className="text-2xl font-bold">{post.title}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{post.title}</h1>
           {post.authorName && (
-            <p className="text-gray-400 text-sm mt-2">By: {post.authorName}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">By: {post.authorName}</p>
           )}
         </div>
 
-        <div className="browser-css">
+        <div className="browser-css text-gray-800 dark:text-gray-200">
           {parse(post.content)}
         </div>
       </Container>

@@ -13,9 +13,7 @@ function AllPostsContent() {
   useEffect(() => {
     appwriteService
       .getPosts([])
-      .then((result) => {
-        if (result) setPosts(result.documents);
-      })
+      .then((result) => { if (result) setPosts(result.documents); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -23,7 +21,7 @@ function AllPostsContent() {
     return (
       <div className="w-full py-8 text-center">
         <Container>
-          <h1 className="text-2xl font-bold text-gray-300">Loading posts...</h1>
+          <h1 className="text-2xl font-bold text-gray-600 dark:text-gray-300">Loading posts...</h1>
         </Container>
       </div>
     );
@@ -33,8 +31,8 @@ function AllPostsContent() {
     return (
       <div className="w-full py-8 text-center">
         <Container>
-          <h1 className="text-2xl font-bold text-gray-300">No posts found</h1>
-          <p className="text-gray-500 mt-2">Be the first to create a post!</p>
+          <h1 className="text-2xl font-bold text-gray-600 dark:text-gray-300">No posts found</h1>
+          <p className="text-gray-400 dark:text-gray-500 mt-2">Be the first to create a post!</p>
         </Container>
       </div>
     );
@@ -44,8 +42,8 @@ function AllPostsContent() {
     <div className="w-full py-8">
       <Container>
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-300 mb-2">All Posts</h1>
-          <p className="text-gray-500">Showing every post from all authors</p>
+          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">All Posts</h1>
+          <p className="text-gray-500 dark:text-gray-400">Showing every post from all authors</p>
         </div>
         <div className="flex flex-wrap">
           {posts.map((post) => (
