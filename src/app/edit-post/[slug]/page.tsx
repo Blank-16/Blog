@@ -25,17 +25,28 @@ function EditPostContent() {
 
   if (!post) {
     return (
-      <div className="w-full py-8 text-center">
-        <Container>
-          <p className="text-gray-400">Loading post...</p>
-        </Container>
+      <div className="py-24 text-center gsap-fade-up">
+        <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontSize: '1.5rem' }}>
+          Loading…
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="py-8">
+    <div className="py-12">
       <Container>
+        <div className="mb-10 gsap-fade-up">
+          <p className="text-xs font-medium tracking-[0.2em] uppercase mb-2" style={{ color: 'var(--text-muted)' }}>
+            Editing
+          </p>
+          <h1
+            className="text-4xl"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            {post.title}
+          </h1>
+        </div>
         <PostForm post={post} />
       </Container>
     </div>

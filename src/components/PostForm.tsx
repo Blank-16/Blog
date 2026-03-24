@@ -71,24 +71,20 @@ export default function PostForm({ post }: PostFormProps) {
   };
 
   const slugTransform = useCallback((value: string): string => {
-    if (value && typeof value === 'string') {
-      return value
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-zA-Z\d]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .substring(0, 36);
-    }
-    return '';
+    if (!value) return '';
+    return value.trim().toLowerCase()
+      .replace(/[^a-zA-Z\d]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 36);
   }, []);
 
   useEffect(() => {
-    const subscription = watch((value, { name }) => {
+    const sub = watch((value, { name }) => {
       if (name === 'title') {
         setValue('slug', slugTransform(value.title ?? ''), { shouldValidate: true });
       }
     });
-    return () => subscription.unsubscribe();
+    return () => sub.unsubscribe();
   }, [watch, slugTransform, setValue]);
 
   const imagePreviewUrl = post?.featuredImage
@@ -96,64 +92,56 @@ export default function PostForm({ post }: PostFormProps) {
     : null;
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit(submit)} className="flex flex-wrap">
-        <div className="w-2/3 px-2">
-          <Input
-            label="Title :"
-            placeholder="Title"
-            className="mb-4"
-            {...register('title', { required: true })}
-          />
-          <Input
-            label="Slug :"
-            placeholder="Slug"
-            className="mb-4"
-            {...register('slug', { required: true })}
-            onInput={(e) =>
-              setValue('slug', slugTransform((e.currentTarget as HTMLInputElement).value), {
-                shouldValidate: true,
-              })
-            }
-          />
-          <RTE
-            label="Content :"
-            name="content"
-            control={control}
-            defaultValue={getValues('content')}
-          />
-        </div>
+    <div className="w-full max-w-5xl mx-auto gsap-fade-up">
+      <form onSubmit={handleSubmit(submit)}>
+        <div className="flex flex-col lg:flex-row gap-8">
 
-        <div className="w-1/3 px-2">
-          <Input
-            label="Featured Image :"
-            type="file"
-            className="mb-4"
-            accept="image/png, image/jpg, image/jpeg, image/gif"
-            {...register('image', { required: !post })}
-          />
-          {post && imagePreviewUrl && (
-            <div className="w-full mb-4">
-              <img
-                src={imagePreviewUrl.toString()}
-                alt={post.title}
-                className="rounded-lg"
-              />
-            </div>
-          )}
-          <Select
-            options={['active', 'inactive']}
-            label="Status"
-            className="mb-4"
-            {...register('status', { required: true })}
-          />
-          <Button
-            type="submit"
-            bgColor={post ? 'bg-green-500' : undefined}
-            className="w-full"
+          {/* ── Left: content ── */}
+          <div className="flex-1 space-y-5">
+            <Input label="Title" placeholder="Your post title…" {...register('title', { required: true })} />
+            <Input
+              label="Slug"
+              placeholder="auto-generated-from-title"
+              {...register('slug', { required: true })}
+              onInput={(e) =>
+                setValue('slug', slugTransform((e.currentTarget as HTMLInputElement).value), { shouldValidate: true })
+              }
+            />
+            <RTE label="Content" name="content" control={control} defaultValue={getValues('content')} />
+          </div>
+
+          {/* ── Right: sidebar ── */}
+          <div
+            className="lg:w-72 flex-shrink-0 rounded-xl p-5 space-y-5 self-start sticky top-20 border"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
           >
-            {post ? 'Update' : 'Submit'}
-          </Button>
+            <h3 className="text-xs font-medium tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>
+              Publish Settings
+            </h3>
+
+            <Input
+              label="Featured Image"
+              type="file"
+              accept="image/png, image/jpg, image/jpeg, image/gif"
+              {...register('image', { required: !post })}
+            />
+
+            {post && imagePreviewUrl && (
+              <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+                <img src={imagePreviewUrl.toString()} alt={post.title} className="w-full object-cover" />
+              </div>
+            )}
+
+            <Select
+              options={['active', 'inactive']}
+              label="Status"
+              {...register('status', { required: true })}
+            />
+
+            <Button type="submit" className="w-full">
+              {post ? 'Update Post' : 'Publish Post'}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

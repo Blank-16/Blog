@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
-import Button from './Button';
 
 interface PostActionsProps {
   post: Post;
@@ -18,6 +17,7 @@ export default function PostActions({ post }: PostActionsProps) {
   if (!isAuthor) return null;
 
   const deletePost = async (): Promise<void> => {
+    if (!confirm('Delete this post? This cannot be undone.')) return;
     const ok = await appwriteService.deletePost(post.$id);
     if (ok) {
       await appwriteService.deleteFile(post.featuredImage);
@@ -26,13 +26,21 @@ export default function PostActions({ post }: PostActionsProps) {
   };
 
   return (
-    <div className="absolute right-6 top-6 flex gap-2">
-      <Link href={`/edit-post/${post.$id}`}>
-        <Button bgColor="bg-green-500">Edit</Button>
+    <div className="flex items-center gap-4">
+      <Link
+        href={`/edit-post/${post.$id}`}
+        className="text-sm underline underline-offset-4 transition-opacity hover:opacity-50"
+        style={{ color: 'var(--text)' }}
+      >
+        Edit post
       </Link>
-      <Button bgColor="bg-red-500" onClick={deletePost}>
-        Delete
-      </Button>
+      <span style={{ color: 'var(--border)' }}>·</span>
+      <button
+        onClick={deletePost}
+        className="text-sm underline underline-offset-4 transition-opacity hover:opacity-50 text-red-500"
+      >
+        Delete post
+      </button>
     </div>
   );
 }
