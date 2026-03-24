@@ -17,6 +17,7 @@ export interface Post extends Models.Document {
   status: "active" | "inactive";
   userId: string;
   authorName?: string;
+  tags?: string[];
 }
 
 interface CreatePostParams {
@@ -26,6 +27,7 @@ interface CreatePostParams {
   status: "active" | "inactive";
   userId: string;
   authorName: string;
+  tags?: string[];
 }
 
 interface UpdatePostParams {
@@ -36,6 +38,7 @@ interface UpdatePostParams {
   status: "active" | "inactive";
   userId?: string;
   authorName?: string;
+  tags?: string[];
 }
 
 export class AppwriteService {
@@ -66,7 +69,7 @@ export class AppwriteService {
     return this.bucket;
   }
 
-  async createPost(params: CreatePostParams): Promise<Post | undefined> {
+  async createPost(params: CreatePostParams): Promise<Post | null> {
     try {
       return await this.getDatabases().createDocument<Post>(
         config.appwriteDatabaseId,
@@ -76,6 +79,7 @@ export class AppwriteService {
       );
     } catch (error) {
       console.log("AppwriteService :: createPost :: error", error);
+      return null;
     }
   }
 
@@ -86,7 +90,8 @@ export class AppwriteService {
     featuredImage,
     status,
     authorName,
-  }: UpdatePostParams): Promise<Post | undefined> {
+    tags,
+  }: UpdatePostParams): Promise<Post | null> {
     try {
       const updateData: Partial<Omit<Post, keyof Models.Document>> = {
         title,
@@ -95,6 +100,7 @@ export class AppwriteService {
         status,
       };
       if (authorName !== undefined) updateData.authorName = authorName;
+      if (tags !== undefined) updateData.tags = tags;
 
       return await this.getDatabases().updateDocument<Post>(
         config.appwriteDatabaseId,
@@ -104,6 +110,7 @@ export class AppwriteService {
       );
     } catch (error) {
       console.log("AppwriteService :: updatePost :: error", error);
+      return null;
     }
   }
 
@@ -121,7 +128,7 @@ export class AppwriteService {
     }
   }
 
-  async getPost(slug: string): Promise<Post | false> {
+  async getPost(slug: string): Promise<Post | null> {
     try {
       return await this.getDatabases().getDocument<Post>(
         config.appwriteDatabaseId,
@@ -130,13 +137,13 @@ export class AppwriteService {
       );
     } catch (error) {
       console.log("AppwriteService :: getPost :: error", error);
-      return false;
+      return null;
     }
   }
 
   async getPosts(
     queries: string[] = [Query.equal("status", "active")],
-  ): Promise<Models.DocumentList<Post> | false> {
+  ): Promise<Models.DocumentList<Post> | null> {
     try {
       return await this.getDatabases().listDocuments<Post>(
         config.appwriteDatabaseId,
@@ -145,19 +152,19 @@ export class AppwriteService {
       );
     } catch (error) {
       console.log("AppwriteService :: getPosts :: error", error);
-      return false;
+      return null;
     }
   }
 
   async uploadFile(
     file: File,
     ownerUserId?: string,
-  ): Promise<Models.File | false> {
+  ): Promise<Models.File | null> {
     try {
-      if (!file) return false;
+      if (!file) return null;
       if (!config.appwriteBucketId || config.appwriteBucketId === "undefined") {
         console.error("AppwriteService :: uploadFile :: missing bucket ID");
-        return false;
+        return null;
       }
       const permissions = [
         Permission.read(Role.any()),
@@ -173,7 +180,7 @@ export class AppwriteService {
       );
     } catch (error) {
       console.log("AppwriteService :: uploadFile :: error", error);
-      return false;
+      return null;
     }
   }
 

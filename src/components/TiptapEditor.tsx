@@ -47,8 +47,12 @@ function Toolbar({ editor }: { editor: Editor }) {
       if (!file) return;
 
       try {
-        const { default: appwriteService } = await import('@/lib/appwrite/appwriteService');
-        const result = await appwriteService.uploadFile(file);
+        const [{ default: appwriteService }, { default: store }] = await Promise.all([
+          import('@/lib/appwrite/appwriteService'),
+          import('@/store/store'),
+        ]);
+        const userId = store.getState().auth.userData?.$id;
+        const result = await appwriteService.uploadFile(file, userId);
         if (!result) throw new Error('Upload failed');
 
         const preview = appwriteService.getFilePreview(result.$id);

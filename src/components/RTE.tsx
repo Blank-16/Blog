@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Controller, Control } from 'react-hook-form';
+import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 
 const TiptapEditor = dynamic(() => import('./TiptapEditor'), {
   ssr: false,
@@ -12,15 +12,14 @@ const TiptapEditor = dynamic(() => import('./TiptapEditor'), {
   ),
 });
 
-interface RTEProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  control: Control<any>;
-  name: string;
+interface RTEProps<T extends FieldValues> {
+  control: Control<T>;
+  name: Path<T>;
   label?: string;
   defaultValue?: string;
 }
 
-export default function RTE({ control, name, label, defaultValue = '' }: RTEProps) {
+export default function RTE<T extends FieldValues>({ control, name, label, defaultValue = '' }: RTEProps<T>) {
   return (
     <div className="w-full">
       {label && (
@@ -32,7 +31,7 @@ export default function RTE({ control, name, label, defaultValue = '' }: RTEProp
       <Controller
         name={name}
         control={control}
-        defaultValue={defaultValue}
+        defaultValue={defaultValue as never}
         render={({ field: { onChange, value } }) => (
           <TiptapEditor value={value ?? ''} onChange={onChange} />
         )}

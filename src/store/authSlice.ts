@@ -3,6 +3,7 @@ import { Models } from 'appwrite';
 
 interface AuthState {
   status: boolean;
+  loading: boolean;
   userData: Models.User<Models.Preferences> | null;
 }
 
@@ -12,6 +13,7 @@ interface LoginPayload {
 
 const initialState: AuthState = {
   status: false,
+  loading: true,
   userData: null,
 };
 
@@ -21,15 +23,20 @@ const authSlice = createSlice({
   reducers: {
     login: (state, action: PayloadAction<LoginPayload>) => {
       state.status = true;
+      state.loading = false;
       state.userData = action.payload.userData;
     },
     logout: (state) => {
       state.status = false;
+      state.loading = false;
       state.userData = null;
+    },
+    setAuthLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
     },
   },
 });
 
-export const { login, logout } = authSlice.actions;
+export const { login, logout, setAuthLoading } = authSlice.actions;
 export type { AuthState };
 export default authSlice.reducer;

@@ -1,16 +1,17 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import Container from '@/components/Container';
+import Image from 'next/image';
 import PostActions from '@/components/PostActions';
 import PostContent from '@/components/PostContent';
 import appwriteService from '@/lib/appwrite/appwriteService';
 
 interface PageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const post = await appwriteService.getPost(params.slug);
+  const { slug } = await params;
+  const post = await appwriteService.getPost(slug);
   if (!post) return { title: 'Post Not Found' };
   return { title: `${post.title} – Blogging Web` };
 }
@@ -21,8 +22,15 @@ function formatDate(iso: string): string {
   });
 }
 
+function readingTime(content: string): string {
+  const words = content.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length;
+  const mins = Math.max(1, Math.round(words / 200));
+  return `${mins} min read`;
+}
+
 export default async function PostPage({ params }: PageProps) {
-  const post = await appwriteService.getPost(params.slug);
+  const { slug } = await params;
+  const post = await appwriteService.getPost(slug);
   if (!post) notFound();
 
   const imageUrl = post.featuredImage
@@ -33,11 +41,14 @@ export default async function PostPage({ params }: PageProps) {
     <div className="gsap-fade-up">
       {/* ── Hero image ── */}
       {imageUrl && (
-        <div className="w-full max-h-[520px] overflow-hidden">
-          <img
+        <div className="relative w-full max-h-[520px] overflow-hidden" style={{ aspectRatio: '16/6' }}>
+          <Image
             src={imageUrl.toString()}
             alt={post.title}
-            className="w-full object-cover max-h-[520px]"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
           />
         </div>
       )}
@@ -50,12 +61,28 @@ export default async function PostPage({ params }: PageProps) {
             <span className="opacity-40">·</span>
           )}
           {post.$createdAt && <span>{formatDate(post.$createdAt)}</span>}
+          <span className="opacity-40">·</span>
+          <span>{readingTime(post.content)}</span>
         </div>
 
         {/* ── Title ── */}
-        <h1 className="font-display text-4xl md:text-6xl leading-none tracking-[-0.03em] mb-10">
+        <h1 className="font-display text-4xl md:text-6xl leading-none tracking-[-0.03em] mb-6">
           {post.title}
         </h1>
+
+        {/* ── Tags ── */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-8">
+            {post.tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-xs px-3 py-1 rounded-full border border-edge text-muted"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <hr className="border-edge mb-10" />
 

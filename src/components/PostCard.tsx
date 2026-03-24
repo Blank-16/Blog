@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import appwriteService from '@/lib/appwrite/appwriteService';
 
 interface PostCardProps {
@@ -8,6 +9,7 @@ interface PostCardProps {
   featuredImage?: string;
   authorName?: string;
   $createdAt?: string;
+  tags?: string[];
   index?: number;
 }
 
@@ -22,6 +24,12 @@ function formatDate(iso?: string): string {
   });
 }
 
+function readingTime(content: string): string {
+  const words = stripHtml(content).split(/\s+/).filter(Boolean).length;
+  const mins = Math.max(1, Math.round(words / 200));
+  return `${mins} min read`;
+}
+
 export default function PostCard({
   $id,
   title,
@@ -29,6 +37,7 @@ export default function PostCard({
   featuredImage,
   authorName,
   $createdAt,
+  tags,
   index = 0,
 }: PostCardProps) {
   const imageUrl = featuredImage ? appwriteService.getFilePreview(featuredImage) : null;
@@ -43,11 +52,13 @@ export default function PostCard({
 
         {/* Image */}
         {imageUrl && (
-          <div className={`w-full mb-5 overflow-hidden rounded-lg ${isFeature ? 'aspect-[16/7]' : 'aspect-video'}`}>
-            <img
+          <div className={`relative w-full mb-5 overflow-hidden rounded-lg ${isFeature ? 'aspect-[16/7]' : 'aspect-video'}`}>
+            <Image
               src={imageUrl.toString()}
               alt={title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           </div>
         )}
@@ -57,6 +68,12 @@ export default function PostCard({
           {authorName && <span>{authorName}</span>}
           {authorName && $createdAt && <span className="opacity-40">·</span>}
           {$createdAt && <span>{formatDate($createdAt)}</span>}
+          {content && (
+            <>
+              <span className="opacity-40">·</span>
+              <span>{readingTime(content)}</span>
+            </>
+          )}
         </div>
 
         {/* Title */}
@@ -69,6 +86,20 @@ export default function PostCard({
           <p className="text-sm leading-relaxed flex-1 line-clamp-3 text-muted font-light">
             {preview}
           </p>
+        )}
+
+        {/* Tags */}
+        {tags && tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="text-xs px-2 py-0.5 rounded-full border border-edge text-muted"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         )}
 
         {/* Read more */}
