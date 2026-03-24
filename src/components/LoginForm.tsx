@@ -39,35 +39,33 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex items-center justify-center w-full mt-4">
-      <div className="mx-auto w-full max-w-lg rounded-xl p-10 border
-        bg-white border-gray-200 shadow-sm
-        dark:bg-gray-800 dark:border-gray-700">
-
+    <div className="flex items-center justify-center w-full min-h-[70vh] px-4">
+      <div className="w-full max-w-md rounded-2xl p-10 border bg-card border-edge gsap-fade-up">
         <div className="mb-2 flex justify-center">
-          <span className="inline-block w-full max-w-[100px]">
-            <Logo />
-          </span>
+          <Logo />
         </div>
 
-        <h2 className="text-center text-2xl font-bold leading-tight text-gray-900 dark:text-white">
-          Sign in to your account
-        </h2>
-        <p className="mt-2 text-center text-base text-gray-500 dark:text-gray-400">
-          Don&apos;t have any account?&nbsp;
-          <Link href="/signup" className="font-medium text-blue-600 dark:text-blue-400 hover:underline transition-all duration-200">
-            Sign Up
+        <h1 className="text-3xl mb-2 font-display mt-6">Welcome back.</h1>
+        <p className="text-sm mb-8 text-muted">
+          Don&apos;t have an account?{' '}
+          <Link
+            href="/signup"
+            className="underline underline-offset-2 text-ink transition-opacity hover:opacity-60"
+          >
+            Sign up
           </Link>
         </p>
 
-        {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-500 mb-4 p-3 rounded-lg bg-red-500/10">
+            {error}
+          </p>
+        )}
 
-        <form onSubmit={handleSubmit(login)} className="mt-8">
-          <div className="space-y-5">
-            <Input label="Email:" placeholder="Enter your email" type="email" {...register('email', { required: true })} />
-            <Input label="Password:" type="password" placeholder="Enter your password" {...register('password', { required: true })} />
-            <Button type="submit" className="w-full">Sign In</Button>
-          </div>
+        <form onSubmit={handleSubmit(login)} className="space-y-4">
+          <Input label="Email" placeholder="you@example.com" type="email" {...register('email', { required: true })} />
+          <Input label="Password" type="password" placeholder="••••••••" {...register('password', { required: true })} />
+          <Button type="submit" className="w-full mt-2">Sign In</Button>
         </form>
       </div>
     </div>

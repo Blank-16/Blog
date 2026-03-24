@@ -26,9 +26,7 @@ function EditPostContent() {
   if (!post) {
     return (
       <div className="py-24 text-center gsap-fade-up">
-        <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontSize: '1.5rem' }}>
-          Loading…
-        </p>
+        <p className="text-2xl font-display text-muted">Loading…</p>
       </div>
     );
   }
@@ -37,15 +35,10 @@ function EditPostContent() {
     <div className="py-12">
       <Container>
         <div className="mb-10 gsap-fade-up">
-          <p className="text-xs font-medium tracking-[0.2em] uppercase mb-2" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase mb-2 text-muted">
             Editing
           </p>
-          <h1
-            className="text-4xl"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            {post.title}
-          </h1>
+          <h1 className="text-4xl font-display">{post.title}</h1>
         </div>
         <PostForm post={post} />
       </Container>

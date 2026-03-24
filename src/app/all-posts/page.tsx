@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import AuthGuard from '@/components/AuthGuard';
-import Container from '@/components/Container';
-import PostCard from '@/components/PostCard';
+import HomeGrid from '@/components/HomeGrid';
 import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
 
 function AllPostsContent() {
@@ -19,40 +18,29 @@ function AllPostsContent() {
 
   if (loading) {
     return (
-      <div className="w-full py-8 text-center">
-        <Container>
-          <h1 className="text-2xl font-bold text-gray-600 dark:text-gray-300">Loading posts...</h1>
-        </Container>
+      <div className="max-w-7xl mx-auto px-6 py-24 text-center gsap-fade-up">
+        <p className="text-2xl font-display text-muted">Loading stories…</p>
       </div>
     );
   }
 
   if (posts.length === 0) {
     return (
-      <div className="w-full py-8 text-center">
-        <Container>
-          <h1 className="text-2xl font-bold text-gray-600 dark:text-gray-300">No posts found</h1>
-          <p className="text-gray-400 dark:text-gray-500 mt-2">Be the first to create a post!</p>
-        </Container>
+      <div className="max-w-7xl mx-auto px-6 py-24 text-center gsap-fade-up">
+        <p className="text-4xl mb-3 font-display">Nothing here yet.</p>
+        <p className="text-muted">Be the first to create a post.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full py-8">
-      <Container>
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">All Posts</h1>
-          <p className="text-gray-500 dark:text-gray-400">Showing every post from all authors</p>
-        </div>
-        <div className="flex flex-wrap">
-          {posts.map((post) => (
-            <div key={post.$id} className="p-2 w-full sm:w-1/2 lg:w-1/4">
-              <PostCard {...post} />
-            </div>
-          ))}
-        </div>
-      </Container>
+    <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="flex items-baseline justify-between mb-10 gsap-fade-up">
+        <h1 className="text-xs font-medium tracking-[0.2em] uppercase text-muted">
+          All Stories — {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+        </h1>
+      </div>
+      <HomeGrid posts={posts} />
     </div>
   );
 }

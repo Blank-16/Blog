@@ -1,9 +1,18 @@
-export default function Logo() {
+import Image from 'next/image';
+
+interface LogoProps {
+  className?: string;
+}
+
+export default function Logo({ className = '' }: LogoProps) {
   return (
-    <div className="m-auto">
-      <span className="inline-block px-6 py-2 rounded-full font-semibold text-gray-900 dark:text-white">
-        Blogging Web
-      </span>
-    </div>
+    <Image
+      src="/logo.svg"
+      alt="Blogging Web"
+      width={120}
+      height={32}
+      priority
+      className={`h-8 w-auto rounded ${className}`}
+    />
   );
 }

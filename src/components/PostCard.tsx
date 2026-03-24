@@ -4,37 +4,78 @@ import appwriteService from '@/lib/appwrite/appwriteService';
 interface PostCardProps {
   $id: string;
   title: string;
+  content?: string;
   featuredImage?: string;
   authorName?: string;
+  $createdAt?: string;
+  index?: number;
 }
 
-export default function PostCard({ $id, title, featuredImage, authorName }: PostCardProps) {
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function formatDate(iso?: string): string {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
+}
+
+export default function PostCard({
+  $id,
+  title,
+  content,
+  featuredImage,
+  authorName,
+  $createdAt,
+  index = 0,
+}: PostCardProps) {
   const imageUrl = featuredImage ? appwriteService.getFilePreview(featuredImage) : null;
+  const preview = content
+    ? stripHtml(content).slice(0, 120) + (content.length > 120 ? '…' : '')
+    : '';
+  const isFeature = index === 0;
 
   return (
-    <Link href={`/post/${$id}`}>
-      <div className="w-full rounded-xl p-4 transition-colors
-        bg-white border border-gray-200 hover:bg-gray-50
-        dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-        <div className="w-full mb-4">
-          {imageUrl ? (
+    <Link href={`/post/${$id}`} className="group block h-full">
+      <article className="h-full flex flex-col bg-card p-7 transition-colors duration-200 hover:bg-subtle">
+
+        {/* Image */}
+        {imageUrl && (
+          <div className={`w-full mb-5 overflow-hidden rounded-lg ${isFeature ? 'aspect-[16/7]' : 'aspect-video'}`}>
             <img
               src={imageUrl.toString()}
               alt={title}
-              className="rounded-xl w-full h-48 object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-          ) : (
-            <div className="w-full h-48 rounded-xl flex items-center justify-center
-              bg-gray-100 dark:bg-gray-700">
-              <span className="text-gray-400 text-sm">No image</span>
-            </div>
-          )}
-        </div>
-        <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">{title}</h2>
-        {authorName && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">By: {authorName}</p>
+          </div>
         )}
-      </div>
+
+        {/* Meta */}
+        <div className="flex items-center gap-3 mb-3 text-xs font-medium tracking-wide text-muted">
+          {authorName && <span>{authorName}</span>}
+          {authorName && $createdAt && <span className="opacity-40">·</span>}
+          {$createdAt && <span>{formatDate($createdAt)}</span>}
+        </div>
+
+        {/* Title */}
+        <h2 className={`font-display mb-2 transition-opacity duration-200 group-hover:opacity-60 text-ink ${isFeature ? 'text-2xl' : 'text-xl'}`}>
+          {title}
+        </h2>
+
+        {/* Preview */}
+        {preview && (
+          <p className="text-sm leading-relaxed flex-1 line-clamp-3 text-muted font-light">
+            {preview}
+          </p>
+        )}
+
+        {/* Read more */}
+        <div className="mt-4 text-xs font-medium tracking-wide uppercase text-muted transition-opacity group-hover:opacity-60">
+          Read →
+        </div>
+      </article>
     </Link>
   );
 }

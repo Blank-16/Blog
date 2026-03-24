@@ -111,11 +111,8 @@ export default function PostForm({ post }: PostFormProps) {
           </div>
 
           {/* ── Right: sidebar ── */}
-          <div
-            className="lg:w-72 flex-shrink-0 rounded-xl p-5 space-y-5 self-start sticky top-20 border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
-          >
-            <h3 className="text-xs font-medium tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>
+          <div className="lg:w-72 flex-shrink-0 rounded-xl p-5 space-y-5 self-start sticky top-20 border bg-card border-edge">
+            <h3 className="text-xs font-medium tracking-widest uppercase text-muted">
               Publish Settings
             </h3>
 
@@ -127,7 +124,7 @@ export default function PostForm({ post }: PostFormProps) {
             />
 
             {post && imagePreviewUrl && (
-              <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+              <div className="rounded-lg overflow-hidden border border-edge">
                 <img src={imagePreviewUrl.toString()} alt={post.title} className="w-full object-cover" />
               </div>
             )}

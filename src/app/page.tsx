@@ -1,40 +1,56 @@
 import { Query } from 'appwrite';
-import Container from '@/components/Container';
-import PostCard from '@/components/PostCard';
-import appwriteService from '@/lib/appwrite/appwriteService';
+import Link from 'next/link';
+import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
+import HomeGrid from '@/components/HomeGrid';
 
 export const revalidate = 60;
 
 export default async function HomePage() {
   const result = await appwriteService.getPosts([Query.equal('status', 'active')]);
-  const posts = result ? result.documents : [];
-
-  if (posts.length === 0) {
-    return (
-      <div className="w-full py-8 mt-4 text-center">
-        <Container>
-          <h1 className="text-2xl font-bold text-gray-600 dark:text-gray-300">No posts found</h1>
-          <p className="text-gray-400 dark:text-gray-500 mt-2">There are no active posts yet.</p>
-        </Container>
-      </div>
-    );
-  }
+  const posts: Post[] = result ? result.documents : [];
 
   return (
-    <div className="w-full py-8">
-      <Container>
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">Latest Posts</h1>
-          <p className="text-gray-500 dark:text-gray-400">Showing all active posts</p>
+    <div className="w-full">
+      {/* ── Hero ── */}
+      <section className="border-b border-edge gsap-fade-up">
+        <div className="max-w-7xl mx-auto px-6 py-20 md:py-28">
+          <p className="text-xs font-medium tracking-[0.2em] uppercase mb-6 text-muted">
+            Est. 2024
+          </p>
+          <h1 className="font-display text-5xl md:text-7xl lg:text-8xl leading-none mb-8 max-w-4xl tracking-[-0.03em]">
+            Ideas worth<br />
+            <em>reading.</em>
+          </h1>
+          <p className="text-lg max-w-lg text-muted font-light">
+            A place for writers to share thoughts, stories, and perspectives that matter.
+          </p>
         </div>
-        <div className="flex flex-wrap">
-          {posts.map((post) => (
-            <div key={post.$id} className="p-2 w-full sm:w-1/2 lg:w-1/4">
-              <PostCard {...post} />
+      </section>
+
+      {/* ── Posts ── */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        {posts.length === 0 ? (
+          <div className="text-center py-24 gsap-fade-up">
+            <p className="text-4xl mb-4 font-display">Nothing here yet.</p>
+            <p className="text-muted">Be the first to publish a story.</p>
+            <Link
+              href="/add-post"
+              className="inline-block mt-8 px-6 py-3 text-sm font-medium border border-edge text-ink rounded-full transition-opacity hover:opacity-60"
+            >
+              Write something →
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-baseline justify-between mb-10 gsap-fade-up">
+              <h2 className="text-xs font-medium tracking-[0.2em] uppercase text-muted">
+                Latest — {posts.length} {posts.length === 1 ? 'story' : 'stories'}
+              </h2>
             </div>
-          ))}
-        </div>
-      </Container>
+            <HomeGrid posts={posts} />
+          </>
+        )}
+      </section>
     </div>
   );
 }

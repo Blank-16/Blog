@@ -33,11 +33,10 @@ export default function HomeGrid({ posts }: HomeGridProps) {
   return (
     <div
       ref={gridRef}
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px"
-      style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border border-edge rounded-xl overflow-hidden"
     >
       {posts.map((post, i) => (
-        <div key={post.$id} className="post-card-item" style={{ opacity: 0 }}>
+        <div key={post.$id} className="post-card-item opacity-0 border-b border-r border-edge last:border-b-0 [&:nth-child(3n)]:border-r-0">
           <PostCard {...post} index={i} />
         </div>
       ))}

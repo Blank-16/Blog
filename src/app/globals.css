@@ -1,60 +1,151 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 
-/* Enable class-based dark mode for Tailwind v4 */
+/* ── Class-based dark mode ── */
 @variant dark (&:where(.dark, .dark *));
 
-/* ── Base ── */
+:root {
+  --bg:           #fafafa;
+  --bg-card:      #ffffff;
+  --bg-subtle:    #f4f4f5;
+  --border:       #e4e4e7;
+  --text:         #09090b;
+  --text-muted:   #71717a;
+  --accent:       #09090b;
+  --accent-fg:    #fafafa;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+}
+
+.dark {
+  --bg:           #000000;
+  --bg-card:      #0a0a0a;
+  --bg-subtle:    #111111;
+  --border:       #1f1f1f;
+  --text:         #fafafa;
+  --text-muted:   #a1a1aa;
+  --accent:       #fafafa;
+  --accent-fg:    #000000;
+}
+
+@theme {
+  /* Fonts */
+  --font-family-display: var(--font-display);
+  --font-family-body:    var(--font-body);
+
+  /* Background colours */
+  --color-base:          var(--bg);
+  --color-card:          var(--bg-card);
+  --color-subtle:        var(--bg-subtle);
+
+  /* Text colours */
+  --color-ink:           var(--text);
+  --color-muted:         var(--text-muted);
+
+  /* Border colour */
+  --color-edge:          var(--border);
+
+  /* Accent */
+  --color-accent:        var(--accent);
+  --color-accent-fg:     var(--accent-fg);
+}
+
+/* ── Base reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: auto; }
+
 body {
-  color: #111827; /* gray-900 */
-  background-color: #f9fafb; /* gray-50 */
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.dark body {
-  color: #f9fafb;
-  background-color: #111827;
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-/* Form controls always have explicit colors set via Tailwind classes */
-input, select, textarea {
-  color: inherit;
+input, select, textarea { font-family: var(--font-body); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* GSAP initial state */
+.gsap-fade-up {
+  opacity: 0;
+  transform: translateY(24px);
 }
 
-/* ── Rich-text post content ── */
-.browser-css h1 { font-size: 2em;    font-weight: bold; margin: 0.5em 0; }
-.browser-css h2 { font-size: 1.5em;  font-weight: bold; margin: 0.5em 0; }
-.browser-css h3 { font-size: 1.25em; font-weight: bold; margin: 0.5em 0; }
-.browser-css p  { margin: 0.5em 0; }
-.browser-css ul { list-style: disc;    padding-left: 1.5em; margin: 0.5em 0; }
-.browser-css ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0; }
-.browser-css blockquote {
-  border-left: 4px solid #d1d5db;
-  padding-left: 1em;
-  color: #6b7280;
-  margin: 0.5em 0;
+/* Tiptap editor + rendered post content */
+.tiptap-content {
+  min-height: 320px;
+  padding: 1.25rem 1.5rem;
+  outline: none;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text);
+  background-color: var(--bg-card);
 }
-.dark .browser-css blockquote {
-  border-color: #4b5563;
-  color: #9ca3af;
+
+.tiptap-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  pointer-events: none;
+  height: 0;
 }
-.browser-css code {
-  background: #f3f4f6;
-  padding: 0.1em 0.3em;
-  border-radius: 4px;
-  font-family: monospace;
-  color: #111827;
+
+.tiptap-content, .tiptap-render {
+  h1 { font-family: var(--font-display); font-size: 2em;    font-weight: 700; line-height: 1.15; margin: 1.25em 0 0.5em;  letter-spacing: -0.02em; }
+  h2 { font-family: var(--font-display); font-size: 1.5em;  font-weight: 700; line-height: 1.2;  margin: 1.1em 0 0.45em; }
+  h3 { font-family: var(--font-display); font-size: 1.2em;  font-weight: 600; line-height: 1.25; margin: 1em 0 0.4em; }
+  p  { margin: 0.75em 0; }
+  strong { font-weight: 700; }
+  em     { font-style: italic; }
+  s      { text-decoration: line-through; color: var(--text-muted); }
+  code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.875em;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+  ul { list-style: disc;    padding-left: 1.5em; margin: 0.75em 0; }
+  ol { list-style: decimal; padding-left: 1.5em; margin: 0.75em 0; }
+  li { margin: 0.3em 0; }
+  li p { margin: 0; }
+  blockquote {
+    border-left: 3px solid var(--border);
+    padding-left: 1.25em;
+    margin: 1em 0;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  pre {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.1em 1.25em;
+    overflow-x: auto;
+    margin: 1em 0;
+    code { background: none; border: none; padding: 0; font-size: 0.875em; }
+  }
+  hr  { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+  img, .tiptap-image { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5em 0; display: block; }
+  a   { color: var(--text); text-decoration: underline; text-underline-offset: 3px; &:hover { opacity: 0.6; } }
 }
-.dark .browser-css code {
-  background: #1f2937;
-  color: #f9fafb;
+
+.tiptap-content img.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
-.browser-css pre {
-  background: #f3f4f6;
-  padding: 1em;
-  border-radius: 6px;
-  overflow-x: auto;
-}
-.dark .browser-css pre {
-  background: #1f2937;
-}
-.browser-css a { color: #2563eb; text-decoration: underline; }
-.dark .browser-css a { color: #60a5fa; }

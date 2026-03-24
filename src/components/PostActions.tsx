@@ -29,15 +29,14 @@ export default function PostActions({ post }: PostActionsProps) {
     <div className="flex items-center gap-4">
       <Link
         href={`/edit-post/${post.$id}`}
-        className="text-sm underline underline-offset-4 transition-opacity hover:opacity-50"
-        style={{ color: 'var(--text)' }}
+        className="text-sm underline underline-offset-4 text-ink transition-opacity hover:opacity-50"
       >
         Edit post
       </Link>
-      <span style={{ color: 'var(--border)' }}>·</span>
+      <span className="text-edge">·</span>
       <button
         onClick={deletePost}
-        className="text-sm underline underline-offset-4 transition-opacity hover:opacity-50 text-red-500"
+        className="text-sm underline underline-offset-4 text-red-500 transition-opacity hover:opacity-50"
       >
         Delete post
       </button>
