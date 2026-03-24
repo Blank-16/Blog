@@ -14,11 +14,16 @@
     "appwrite": "^18.2.0",
     "html-react-parser": "^5.2.6",
     "next": "^15.0.0",
-    "quill": "^2.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.61.1",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "gsap": "^3.12.5",
+    "@tiptap/react": "^2.11.5",
+    "@tiptap/starter-kit": "^2.11.5",
+    "@tiptap/extension-image": "^2.11.5",
+    "@tiptap/extension-placeholder": "^2.11.5",
+    "@tiptap/html": "^2.11.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
