@@ -166,21 +166,21 @@ export default function TiptapEditor({ value, onChange }: TiptapEditorProps) {
     };
   }, [editor]);
 
-  // Sync external value changes
-  const prevValueRef = useRef(value);
+  // Sync content when editor first becomes ready, or when value changes externally
+  const prevValueRef = useRef<string>('');
   useEffect(() => {
-    if (!editor || value === prevValueRef.current) return;
+    if (!editor) return;
+    // Skip only if value hasn't changed AND we've already synced at least once
+    if (value === prevValueRef.current && prevValueRef.current !== '') return;
     prevValueRef.current = value;
 
     const parsed = parseContent(value);
     if (parsed) {
-  editor.commands.setContent(parsed, false);
+      editor.commands.setContent(parsed, false);
     } else if (!value) {
-        // Only clear when explicitly empty
-        editor.commands.clearContent(false);
+      editor.commands.clearContent(false);
     } else {
-    // fallback: treat as HTML instead of destroying content
-    editor.commands.setContent(value, false);
+      editor.commands.setContent(value, false);
     }
   }, [value, editor]);
 

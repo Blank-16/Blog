@@ -6,11 +6,37 @@ import Header from '@/components/client/Header';
 import Footer from '@/components/ui/Footer';
 import SmoothScroll from '@/components/client/SmoothScroll';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+
 export const metadata: Metadata = {
-  title: 'Blogging Web',
-  description: 'A full-featured blogging platform',
+  title: {
+    default: 'Blogging Web',
+    template: '%s – Blogging Web',
+  },
+  description: 'A place for writers to share thoughts, stories, and perspectives that matter.',
+  metadataBase: new URL(siteUrl || 'http://localhost:3000'),
+
+  openGraph: {
+    type: 'website',
+    siteName: 'Blogging Web',
+    title: 'Blogging Web',
+    description: 'A place for writers to share thoughts, stories, and perspectives that matter.',
+  },
+
+  twitter: {
+    card: 'summary',
+    title: 'Blogging Web',
+    description: 'A place for writers to share thoughts, stories, and perspectives that matter.',
+  },
+
   icons: {
     icon: '/logo.svg',
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
   },
 };
 
