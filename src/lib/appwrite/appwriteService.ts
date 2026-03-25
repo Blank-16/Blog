@@ -196,7 +196,7 @@ export class AppwriteService {
     }
   }
 
-  getFilePreview(fileId: string): URL | null {
+  getFilePreview(fileId: string): string | null {
     try {
       if (!fileId || !config.appwriteBucketId) return null;
       return this.getBucket().getFileView(config.appwriteBucketId, fileId);

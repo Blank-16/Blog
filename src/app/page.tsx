@@ -1,3 +1,3 @@
-import HomePage from '@/pages/HomePage';
-export { revalidate } from '@/pages/HomePage';
+import HomePage from '@/page-components/HomePage';
+export { revalidate } from '@/page-components/HomePage';
 export default HomePage;

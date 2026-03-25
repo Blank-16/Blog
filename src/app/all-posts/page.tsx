@@ -1,2 +1,2 @@
-import AllPostsPage from '@/pages/AllPostsPage';
+import AllPostsPage from '@/page-components/AllPostsPage';
 export default AllPostsPage;

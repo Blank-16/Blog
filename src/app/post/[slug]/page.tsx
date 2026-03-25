@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import appwriteService from '@/lib/appwrite/appwriteService';
-import PostPage from '@/pages/PostPage';
+import PostPage from '@/page-components/PostPage';
 
 interface PageProps {
   params: Promise<{ slug: string }>;

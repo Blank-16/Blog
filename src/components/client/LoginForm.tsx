@@ -9,7 +9,7 @@ import { login as authLogin } from '@/store/authSlice';
 import { useAppDispatch } from '@/store/hooks';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import Logo from './Logo';
+import Logo from '@/components/ui/Logo';
 
 interface LoginFormValues {
   email: string;
