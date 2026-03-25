@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 
-const TiptapEditor = dynamic(() => import('./TiptapEditor'), {
+const TiptapEditor = dynamic(() => import('@/components/client/TiptapEditor'), {
   ssr: false,
   loading: () => (
     <div className="rounded-xl border border-edge h-48 flex items-center justify-center text-sm text-muted">

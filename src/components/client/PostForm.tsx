@@ -4,11 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
-import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
-import Button from './Button';
-import Input from './Input';
-import Select from './Select';
-import RTE from './RTE';
+import appwriteService, { Post, buildPostSlug } from '@/lib/appwrite/appwriteService';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import RTE from '@/components/client/RTE';
 
 const DRAFT_KEY = 'blog-post-draft';
 
@@ -169,12 +169,9 @@ export default function PostForm({ post }: PostFormProps) {
   };
 
   const slugTransform = useCallback((value: string): string => {
-    if (!value) return '';
-    return value.trim().toLowerCase()
-      .replace(/[^a-zA-Z\d]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .substring(0, 36);
-  }, []);
+    if (!userData) return '';
+    return buildPostSlug(userData.name, value);
+  }, [userData]);
 
   useEffect(() => {
     const sub = watch((value, { name }) => {
@@ -188,6 +185,26 @@ export default function PostForm({ post }: PostFormProps) {
   const imagePreviewUrl = post?.featuredImage
     ? appwriteService.getFilePreview(post.featuredImage)
     : null;
+
+  // Live preview of newly selected file
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setLocalPreview(url);
+    } else {
+      setLocalPreview(null);
+    }
+  };
+
+  // Clean up blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (localPreview) URL.revokeObjectURL(localPreview);
+    };
+  }, [localPreview]);
 
   return (
     <div className="w-full max-w-5xl mx-auto gsap-fade-up">
@@ -226,13 +243,28 @@ export default function PostForm({ post }: PostFormProps) {
                 type="file"
                 accept="image/png, image/jpg, image/jpeg, image/gif"
                 {...register('image', { required: !post ? 'Featured image is required' : false })}
+                onChange={(e) => {
+                  register('image').onChange(e);
+                  handleImageChange(e);
+                }}
               />
               {errors.image && <p className="mt-1 text-xs text-red-500">{errors.image.message}</p>}
             </div>
 
-            {post && imagePreviewUrl && (
-              <div className="rounded-lg overflow-hidden border border-edge">
-                <img src={imagePreviewUrl.toString()} alt={post.title} className="w-full object-cover" />
+            {/* Show new selection first, fall back to existing image */}
+            {(localPreview || imagePreviewUrl) && (
+              <div className="rounded-lg overflow-hidden border border-edge bg-subtle">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={localPreview ?? imagePreviewUrl!.toString()}
+                  alt="Featured image preview"
+                  className="w-full object-cover"
+                />
+                {localPreview && (
+                  <p className="text-[10px] text-center text-muted py-1.5 border-t border-edge">
+                    New image selected
+                  </p>
+                )}
               </div>
             )}
 

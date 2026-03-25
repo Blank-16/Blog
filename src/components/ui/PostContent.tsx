@@ -8,15 +8,16 @@ interface PostContentProps {
   content: string;
 }
 
+/** Returns parsed Tiptap JSON only if the content is actually JSON — no warnings for HTML content */
 function parseToJSON(raw: string): JSONContent | null {
-  if (!raw) return null;
+  if (!raw || !raw.trimStart().startsWith('{')) return null;
   try {
     const parsed = JSON.parse(raw);
     if (parsed?.type === 'doc' && Array.isArray(parsed.content)) {
       return parsed as JSONContent;
     }
-  } catch (e) {
-    console.warn('PostContent: invalid JSON content', e);
+  } catch {
+    // Silently ignore — content is HTML, not JSON
   }
   return null;
 }
@@ -31,12 +32,12 @@ function renderToHtml(content: string): string {
         Image,
       ]);
       return DOMPurify.sanitize(generated);
-    } catch (e) {
-      console.warn('PostContent: generateHTML failed, falling back to raw HTML', e);
+    } catch {
+      // generateHTML failed — fall through to raw HTML render
     }
   }
 
-  // Legacy Quill HTML or broken JSON — sanitize and render as-is
+  // Legacy HTML content (or JSON that failed to render) — sanitize and render as-is
   return DOMPurify.sanitize(content);
 }
 

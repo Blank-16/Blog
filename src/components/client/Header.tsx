@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import Logo from './Logo';
-import LogoutBtn from './LogoutBtn';
-import Container from './Container';
-import ThemeToggle from './ThemeToggle';
+import Logo from '@/components/ui/Logo';
+import LogoutBtn from '@/components/client/LogoutBtn';
+import Container from '@/components/ui/Container';
+import ThemeToggle from '@/components/client/ThemeToggle';
 
 interface NavItem {
   name: string;

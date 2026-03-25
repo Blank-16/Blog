@@ -7,8 +7,8 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import authService from '@/lib/appwrite/auth';
 import { login as authLogin } from '@/store/authSlice';
 import { useAppDispatch } from '@/store/hooks';
-import Button from './Button';
-import Input from './Input';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import Logo from './Logo';
 
 interface LoginFormValues {

@@ -1,10 +1,10 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import StoreProvider from '@/store/StoreProvider';
-import AuthInitializer from '@/components/AuthInitializer';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import SmoothScroll from '@/components/SmoothScroll';
+import AuthInitializer from '@/components/client/AuthInitializer';
+import Header from '@/components/client/Header';
+import Footer from '@/components/ui/Footer';
+import SmoothScroll from '@/components/client/SmoothScroll';
 
 export const metadata: Metadata = {
   title: 'Blogging Web',
