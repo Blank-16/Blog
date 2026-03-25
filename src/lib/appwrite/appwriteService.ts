@@ -18,6 +18,8 @@ export interface Post extends Models.Document {
   userId: string;
   authorName?: string;
   tags?: string[];
+  ratings?: number[];
+  reviews?: string[];
 }
 
 interface CreatePostParams {
@@ -203,7 +205,67 @@ export class AppwriteService {
       return null;
     }
   }
+
+  /**
+   * Appends a star rating (1–5) to the post's ratings[] array.
+   * Returns the updated post or null on failure.
+   */
+  async addRating(postId: string, existingRatings: number[], rating: number): Promise<Post | null> {
+    try {
+      return await this.getDatabases().updateDocument<Post>(
+        config.appwriteDatabaseId,
+        config.appwriteCollectionId,
+        postId,
+        { ratings: [...existingRatings, rating] },
+      );
+    } catch (error) {
+      console.error("AppwriteService :: addRating :: error", error);
+      return null;
+    }
+  }
+
+  /**
+   * Appends a review string to the post's reviews[] array.
+   * Each review is stored as "AuthorName|||Comment text" so we can
+   * split author from body on the client without a separate collection.
+   */
+  async addReview(postId: string, existingReviews: string[], review: string): Promise<Post | null> {
+    try {
+      return await this.getDatabases().updateDocument<Post>(
+        config.appwriteDatabaseId,
+        config.appwriteCollectionId,
+        postId,
+        { reviews: [...existingReviews, review] },
+      );
+    } catch (error) {
+      console.error("AppwriteService :: addReview :: error", error);
+      return null;
+    }
+  }
 }
 
 const appwriteService = new AppwriteService();
 export default appwriteService;
+
+/**
+ * Builds a URL-safe Appwrite document ID from author name + post title.
+ * Format: "<author-slug>-<title-slug>" trimmed to 36 chars max.
+ * Appwrite requires IDs to start with a letter or digit, max 36 chars,
+ * and contain only [a-zA-Z0-9._-].
+ */
+export function buildPostSlug(authorName: string, title: string): string {
+  const slugify = (s: string) =>
+    s
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+  const authorPart = slugify(authorName).slice(0, 10);
+  const titlePart = slugify(title);
+  const combined = authorPart ? `${authorPart}-${titlePart}` : titlePart;
+  // Appwrite IDs: max 36 chars, must start with [a-zA-Z0-9]
+  const trimmed = combined.slice(0, 36).replace(/-+$/, '');
+  // Fallback if title was empty / all special chars
+  return /^[a-zA-Z0-9]/.test(trimmed) ? trimmed : `post-${trimmed}`.slice(0, 36);
+}

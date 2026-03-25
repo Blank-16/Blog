@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import PostActions from '@/components/client/PostActions';
 import PostContent from '@/components/ui/PostContent';
+import RatingsSection from '@/components/client/RatingsSection';
 import appwriteService from '@/lib/appwrite/appwriteService';
 
 function formatDate(iso: string): string {
@@ -42,8 +43,7 @@ export default async function PostPage({ slug }: { slug: string }) {
       )}
 
       {imageUrl && (
-        <div className="relative w-full mb-10 overflow-hidden rounded-xl border border-edge"
-             style={{ maxHeight: '480px', aspectRatio: '16/9' }}>
+        <div className="relative w-full mb-10 overflow-hidden rounded-xl border border-edge aspect-video max-h-[480px]">
           <Image src={imageUrl.toString()} alt={post.title} fill priority
             sizes="(max-width: 768px) 100vw, 768px"
             className="object-contain bg-subtle"
@@ -57,6 +57,8 @@ export default async function PostPage({ slug }: { slug: string }) {
       <div className="mt-14 pt-8 border-t border-edge">
         <PostActions post={post} />
       </div>
+
+      <RatingsSection post={post} />
     </div>
   );
 }

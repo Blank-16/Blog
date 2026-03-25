@@ -9,8 +9,8 @@ export default function Logo({ className = '' }: LogoProps) {
     <Image
       src="/logo.svg"
       alt="Blogging Web"
-      width={120}
-      height={32}
+      width={0}
+      height={0}
       priority
       className={`h-8 w-auto rounded ${className}`}
     />

@@ -1,3 +1,5 @@
+'use client';
+
 import AuthGuard from '@/components/client/AuthGuard';
 import Container from '@/components/ui/Container';
 import PostForm from '@/components/client/PostForm';

@@ -47,7 +47,7 @@ export default function HomeGrid({ posts }: HomeGridProps) {
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-x divide-y divide-edge border border-edge rounded-xl overflow-hidden"
     >
       {posts.map((post, i) => (
-        <div key={post.$id} className="post-card-item bg-card" data-index={i}>
+        <div key={post.$id} className="post-card-item" data-index={i}>
           <PostCard {...post} index={i} />
         </div>
       ))}

@@ -17,15 +17,21 @@ export default function SmoothScroll() {
       // Scroll to top instantly on route change
       window.scrollTo(0, 0);
 
-      // Animate all elements marked with gsap-fade-up
-      ctx = gsap.context(() => {
-        gsap.to('.gsap-fade-up', {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          stagger: 0.08,
-          ease: 'power3.out',
-          clearProps: 'transform',
+      // Double rAF ensures the DOM has painted the new page elements
+      // before GSAP queries for '.gsap-fade-up', preventing the
+      // "GSAP target not found" warning on every route change.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          ctx = gsap.context(() => {
+            gsap.to('.gsap-fade-up', {
+              opacity: 1,
+              y: 0,
+              duration: 0.6,
+              stagger: 0.08,
+              ease: 'power3.out',
+              clearProps: 'transform',
+            });
+          });
         });
       });
     });
