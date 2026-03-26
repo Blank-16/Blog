@@ -5,12 +5,19 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import appwriteService, { Post, buildPostSlug } from '@/lib/appwrite/appwriteService';
+import { compressImage } from '@/lib/compressImage';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import RTE from '@/components/client/RTE';
 
 const DRAFT_KEY = 'blog-post-draft';
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 interface PostFormValues {
   title: string;
@@ -102,7 +109,8 @@ export default function PostForm({ post }: PostFormProps) {
         // Upload new image first (if provided)
         let newFileId = post.featuredImage;
         if (data.image[0]) {
-          const file = await appwriteService.uploadFile(data.image[0], userData.$id);
+          const toUpload = compressedFile ?? data.image[0];
+          const file = await appwriteService.uploadFile(toUpload, userData.$id);
           if (!file) {
             setSubmitError('Image upload failed. Please try again.');
             setSubmitting(false);
@@ -135,7 +143,8 @@ export default function PostForm({ post }: PostFormProps) {
 
         router.push(`/post/${dbPost.$id}`);
       } else {
-        const file = await appwriteService.uploadFile(data.image[0], userData.$id);
+        const toUpload = compressedFile ?? data.image[0];
+        const file = await appwriteService.uploadFile(toUpload, userData.$id);
         if (!file) {
           setError('image', { message: 'Image upload failed. Please try again.' });
           setSubmitting(false);
@@ -160,6 +169,8 @@ export default function PostForm({ post }: PostFormProps) {
 
         // Clear draft on successful publish
         try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+        setCompressedFile(null);
+        setCompressionInfo(null);
         router.push(`/post/${dbPost.$id}`);
       }
     } catch {
@@ -188,14 +199,37 @@ export default function PostForm({ post }: PostFormProps) {
 
   // Live preview of newly selected file
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [compressionInfo, setCompressionInfo] = useState<{ before: number; after: number } | null>(null);
+  const [compressing, setCompressing] = useState(false);
+  // Store the compressed file so submit() uses it instead of raw FileList
+  const [compressedFile, setCompressedFile] = useState<File | null>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setLocalPreview(url);
-    } else {
+    if (!file) {
       setLocalPreview(null);
+      setCompressionInfo(null);
+      setCompressedFile(null);
+      return;
+    }
+
+    // Show a preview of the original immediately
+    const url = URL.createObjectURL(file);
+    setLocalPreview(url);
+    setCompressionInfo(null);
+    setCompressing(true);
+
+    try {
+      const compressed = await compressImage(file);
+      setCompressedFile(compressed);
+      if (compressed !== file) {
+        setCompressionInfo({ before: file.size, after: compressed.size });
+        // Update preview to compressed version
+        URL.revokeObjectURL(url);
+        setLocalPreview(URL.createObjectURL(compressed));
+      }
+    } finally {
+      setCompressing(false);
     }
   };
 
@@ -260,7 +294,20 @@ export default function PostForm({ post }: PostFormProps) {
                   alt="Featured image preview"
                   className="w-full object-cover"
                 />
-                {localPreview && (
+                {compressing && (
+                  <p className="text-[10px] text-center text-muted py-1.5 border-t border-edge">
+                    Compressing…
+                  </p>
+                )}
+                {!compressing && compressionInfo && (
+                  <p className="text-[10px] text-center text-green-600 dark:text-green-400 py-1.5 border-t border-edge">
+                    Compressed {formatBytes(compressionInfo.before)} → {formatBytes(compressionInfo.after)}{' '}
+                    <span className="font-medium">
+                      ({Math.round((1 - compressionInfo.after / compressionInfo.before) * 100)}% smaller)
+                    </span>
+                  </p>
+                )}
+                {!compressing && !compressionInfo && localPreview && (
                   <p className="text-[10px] text-center text-muted py-1.5 border-t border-edge">
                     New image selected
                   </p>
