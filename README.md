@@ -1,141 +1,211 @@
-# Blogging Web — Next.js
+# Blogging Web
 
-Refactored from React + Vite to **Next.js 15 App Router**.
+A full-stack blogging platform built with Next.js 15 App Router and Appwrite. Write, publish, and manage posts with a clean minimal UI, rich text editing, image uploads, ratings, and reviews.
 
-## Stack
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![Appwrite](https://img.shields.io/badge/Appwrite-18-pink?logo=appwrite)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss)
 
-| Layer | Original | New |
-|---|---|---|
-| Framework | React + Vite | **Next.js 15 (App Router)** |
-| Routing | react-router-dom | **Next.js file-based routing** |
-| Navigation | `useNavigate` / `<Link>` from RRD | `useRouter` / `<Link>` from next/navigation |
-| Rendering | 100% CSR | **SSR / ISR** for public pages, CSR for auth-gated pages |
-| Env vars | `VITE_*` | **`NEXT_PUBLIC_*`** |
-| Rich text | Quill (static import) | Quill (dynamic import to avoid SSR crash) |
+---
 
-## Getting started
+## Features
 
-```bash
-npm install
-cp .env.local.sample .env.local
-# fill in your Appwrite credentials
-npm run dev
-```
+- **Rich text editor** — Tiptap with headings, lists, blockquotes, code blocks, and inline image upload
+- **Image compression** — client-side canvas compression before upload (up to 85% size reduction)
+- **Ratings & reviews** — star ratings and comments on every post
+- **Draft autosave** — new posts auto-saved to localStorage every second
+- **Dark mode** — full dark/light theme toggle
+- **Auth** — sign up, log in, protected routes via Appwrite Auth
+- **SEO** — dynamic metadata, Open Graph, Twitter cards, JSON-LD structured data, sitemap, robots.txt
+- **ISR + Hybrid rendering** — top 20 posts pre-built at deploy, new posts rendered on first visit then cached
+- **GSAP animations** — fade-up transitions on route change
 
-## Project structure
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 (App Router) |
+| Backend / Database | Appwrite (Auth, Database, Storage) |
+| State management | Redux Toolkit |
+| Rich text editor | Tiptap |
+| Forms | React Hook Form |
+| Animations | GSAP |
+| Styling | Tailwind CSS v4 |
+| Language | TypeScript 5 |
+| Fonts | DM Serif Display, DM Sans |
+
+---
+
+## Project Structure
 
 ```
 src/
-├── app/                        # Next.js App Router pages
-│   ├── layout.jsx              # Root layout (Header, Footer, Redux Provider)
-│   ├── page.jsx                # Home — SSR/ISR, public
-│   ├── login/page.jsx
-│   ├── signup/page.jsx
-│   ├── all-posts/page.jsx      # Auth-gated, CSR
-│   ├── add-post/page.jsx       # Auth-gated
-│   ├── edit-post/[slug]/page.jsx
-│   ├── post/[slug]/page.jsx    # SSR, public
-│   └── not-found.jsx
+├── app/                          # Next.js App Router
+│   ├── layout.tsx                # Root layout — Redux, Header, Footer, GSAP
+│   ├── page.tsx                  # Home page (ISR)
+│   ├── post/[slug]/page.tsx      # Post page — metadata, JSON-LD, hybrid ISR
+│   ├── add-post/page.tsx
+│   ├── edit-post/[slug]/page.tsx
+│   ├── all-posts/page.tsx
+│   ├── login/page.tsx
+│   ├── signup/page.tsx
+│   ├── not-found.tsx
+│   ├── sitemap.ts                # Auto-generated sitemap.xml
+│   ├── robots.ts                 # Auto-generated robots.txt
+│   ├── globals.css
+│   └── api/
+│       └── revalidate/route.ts   # On-demand ISR revalidation endpoint
+│
+├── page-components/              # Page-level components (not Next.js routes)
+│   ├── HomePage.tsx
+│   ├── PostPage.tsx
+│   ├── AddPostPage.tsx
+│   ├── EditPostPage.tsx
+│   ├── AllPostsPage.tsx
+│   ├── LoginPage.tsx
+│   └── SignupPage.tsx
+│
 ├── components/
-│   ├── AuthGuard.jsx           # Replaces old <AuthLayout>
-│   ├── AuthInitializer.jsx     # Replaces useEffect in old App.jsx
-│   ├── PostActions.jsx         # Client island for edit/delete on post page
-│   ├── PostForm.jsx
-│   ├── PostCard.jsx
-│   ├── RTE.jsx                 # Quill (dynamic import, SSR-safe)
-│   ├── LoginForm.jsx
-│   ├── SignupForm.jsx
-│   ├── Header.jsx
-│   ├── Footer.jsx
-│   ├── LogoutBtn.jsx
-│   ├── Container.jsx
-│   ├── Button.jsx
-│   ├── Input.jsx
-│   └── Select.jsx
-├── lib/appwrite/
-│   ├── config.js               # NEXT_PUBLIC_ env vars
-│   ├── auth.js                 # AuthService (unchanged logic)
-│   └── appwriteService.js      # DB + Storage service (unchanged logic)
+│   ├── client/                   # 'use client' components
+│   │   ├── Header.tsx
+│   │   ├── AuthGuard.tsx
+│   │   ├── AuthInitializer.tsx
+│   │   ├── PostForm.tsx
+│   │   ├── PostActions.tsx
+│   │   ├── HomeGrid.tsx
+│   │   ├── RatingsSection.tsx
+│   │   ├── TiptapEditor.tsx
+│   │   ├── RTE.tsx
+│   │   ├── LoginForm.tsx
+│   │   ├── SignupForm.tsx
+│   │   ├── LogoutBtn.tsx
+│   │   ├── ThemeToggle.tsx
+│   │   └── SmoothScroll.tsx
+│   └── ui/                       # Server-safe UI primitives
+│       ├── Button.tsx
+│       ├── Input.tsx
+│       ├── Select.tsx
+│       ├── Logo.tsx
+│       ├── PostCard.tsx
+│       ├── PostContent.tsx
+│       ├── Container.tsx
+│       └── Footer.tsx
+│
+├── lib/
+│   ├── appwrite/
+│   │   ├── config.ts             # Env var bindings
+│   │   ├── auth.ts               # AuthService (login, signup, session)
+│   │   └── appwriteService.ts    # DB + Storage + ratings/reviews
+│   └── compressImage.ts          # Canvas-based client-side compression
+│
 └── store/
-    ├── store.js
-    ├── authSlice.js
-    └── StoreProvider.jsx       # 'use client' Redux Provider wrapper
+    ├── store.ts
+    ├── authSlice.ts
+    ├── hooks.ts                  # Typed useAppSelector / useAppDispatch
+    └── StoreProvider.tsx
 ```
 
-## Key migration notes
+---
 
-### 1. `'use client'` directive
-Any component that uses hooks (`useState`, `useEffect`, `useSelector`, `useRouter`, etc.)
-must have `'use client'` at the top. Server components cannot use these.
+## Getting Started
 
-### 2. Env variable prefix
-All `VITE_*` variables must be renamed to `NEXT_PUBLIC_*` in `.env.local`.
+### Prerequisites
 
-### 3. Routing
-| Old (react-router-dom) | New (Next.js) |
-|---|---|
-| `<Link to="/path">` | `<Link href="/path">` |
-| `useNavigate()` → `navigate('/path')` | `useRouter()` → `router.push('/path')` |
-| `useParams()` | `useParams()` from `next/navigation` |
+- Node.js 18+
+- An [Appwrite](https://appwrite.io) project (Cloud or self-hosted)
 
-### 4. Auth session initialisation
-The old `App.jsx` had a `useEffect` that checked Appwrite on mount.
-This is now `<AuthInitializer />` — an invisible client component in `layout.jsx`.
+### Appwrite Collection Schema
 
-### 5. Quill / SSR
-Quill accesses `document` on import. In Next.js this crashes SSR.
-`RTE.jsx` now uses a **dynamic import inside `useEffect`** so Quill only loads in the browser.
+Your posts collection needs these attributes:
 
-### 6. Post detail page (Server Component + Client Island)
-`/post/[slug]/page.jsx` is a **Server Component** that fetches and renders the post.
-Edit/Delete buttons live in `<PostActions>` — a small **Client Component** — so they can
-read Redux state to check authorship without making the whole page a client component.
+| Attribute | Type | Required |
+|---|---|---|
+| title | String (255) | ✅ |
+| content | String (1048576) | ✅ |
+| featuredImage | String (255) | ✅ |
+| status | String (255) | ✅ |
+| userId | String (255) | ✅ |
+| authorName | String (255) | — |
+| tags | String[] | — |
+| ratings | Integer[] | — |
+| reviews | String[] | — |
 
+### Installation
 
+```bash
+# 1. Clone the repo
+git clone https://github.com/yourusername/blogging-web.git
+cd blogging-web
 
+# 2. Install dependencies
+npm install
 
+# 3. Set up environment variables
+cp .env.local.sample .env.local
+# Fill in your Appwrite credentials (see below)
 
-Here's the full list of improvements made after refactoring 
+# 4. Run the dev server
+npm run dev
+```
 
-**Framework & Architecture**
+Open [http://localhost:3000](http://localhost:3000).
 
-- Migrated from React + Vite (pure CSR) to Next.js 15 App Router, enabling SSR and ISR on public pages
-- Home page and post detail page are now Server Components — they fetch data on the server before sending HTML to the browser, improving initial load and SEO
-- Post detail page uses a "Server Component + Client Island" pattern: the page itself is a server component, but `<PostActions>` is a small client component that reads Redux auth state to show/hide edit and delete buttons — no unnecessary client bundle on the full page
-- File-based routing replaces the manual `createBrowserRouter` config in `main.jsx`
+### Environment Variables
 
-**Auth & Session**
+```bash
+# .env.local
 
-- The `useEffect` session check that lived in `App.jsx` is now an invisible `<AuthInitializer>` component that sits in the root layout — same behaviour, but correctly separated from routing concerns
-- `<AuthLayout>` (old Protected component) replaced by `<AuthGuard>` using `useRouter` from `next/navigation` and `router.replace()` instead of react-router's `navigate()`
-- `LogoutBtn` now calls `router.push('/')` after dispatching logout, fixing the case where the old component didn't navigate after logout
+# Appwrite — all safe to be public (security via Appwrite permissions)
+NEXT_PUBLIC_APPWRITE_URL=https://cloud.appwrite.io/v1
+NEXT_PUBLIC_APPWRITE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_APPWRITE_DATABASE_ID=your-database-id
+NEXT_PUBLIC_APPWRITE_COLLECTION_ID=your-collection-id
+NEXT_PUBLIC_APPWRITE_BUCKET_ID=your-bucket-id
 
-**TypeScript**
+# Site URL — no trailing slash
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-- Every file converted from `.js`/`.jsx` to `.ts`/`.tsx` — zero JavaScript remains in `src/`
-- `tsconfig.json` added with `strict: true`
-- `Post` interface typed as `extends Models.Document` so all Appwrite document fields (`$id`, `$createdAt`, etc.) are available with full autocomplete
-- `AuthState`, `LoginPayload`, and `PayloadAction<LoginPayload>` added to the Redux slice
-- `RootState` and `AppDispatch` exported from `store.ts`
-- New `src/store/hooks.ts` file with `useAppSelector` and `useAppDispatch` typed wrappers — all components use these instead of raw `useSelector`/`useDispatch`
-- All form components use `useForm<FormValues>` and `SubmitHandler<FormValues>` generics
-- UI primitives (`Button`, `Input`, `Select`) extend the correct HTML element attribute interfaces (`ButtonHTMLAttributes`, `InputHTMLAttributes`, `SelectHTMLAttributes`) so all native props are accepted without extra declarations
-- `forwardRef` calls in `Input` and `Select` are properly typed with element and props generics
-- Error handling uses `err instanceof Error` instead of untyped `catch (error)` with `.message`
+# Server-only secret for on-demand ISR revalidation
+REVALIDATE_SECRET=your-random-secret-string
+```
 
-**Environment Variables**
+---
 
-- All `VITE_*` env vars renamed to `NEXT_PUBLIC_*` as required by Next.js
-- `config.ts` uses `?? ''` nullish coalescing instead of `String(import.meta.env.*)` — safer and TS-friendly
+## Rendering Strategy
 
-**Quill / RTE**
+| Page | Strategy | Why |
+|---|---|---|
+| Home | ISR (1hr) | Public, changes as new posts are added |
+| Post detail | Hybrid ISR (24hr) | Top 20 pre-built, new posts SSR on first visit |
+| All posts | CSR | Auth-gated, user-specific data |
+| Add / Edit post | CSR | Auth-gated, fully interactive |
+| Login / Signup | CSR | No SEO value |
 
-- Quill is now dynamically imported inside `useEffect` instead of a static top-level import — this prevents the SSR crash caused by Quill accessing `document` at import time
+---
 
-**Code Quality**
+## Deployment
 
-- Removed the `window.alert("Submitted")` call from PostForm's submit button
-- `AllPosts` page fixed — the original had `appwriteService.getPosts([])` called directly in the component body on every render (not inside `useEffect`), causing an infinite fetch loop; now correctly inside `useEffect`
-- `authSlice.ts` had a stray unused `import { act } from 'react'` — removed
-- `AppwriteService` and `AuthService` class fields are now `private` instead of public
-- Appwrite image URLs are safely cast with `.toString()` before being passed to `src` attributes, since `getFileView` returns a `URL` object
+### Vercel (recommended)
+
+1. Push your repo to GitHub
+2. Import the project on [vercel.com](https://vercel.com)
+3. Add all environment variables from `.env.local` in `Settings → Environment Variables`
+4. Change `NEXT_PUBLIC_SITE_URL` to your actual Vercel domain
+5. Deploy
+
+After deploying, submit `https://yourdomain.vercel.app/sitemap.xml` to [Google Search Console](https://search.google.com/search-console).
+
+---
+
+## Scripts
+
+```bash
+npm run dev      # Start development server
+npm run build    # Production build
+npm run start    # Start production server
+npm run lint     # ESLint
+```
+

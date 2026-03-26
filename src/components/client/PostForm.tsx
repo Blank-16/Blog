@@ -344,8 +344,8 @@ export default function PostForm({ post }: PostFormProps) {
               <p className="text-xs text-muted italic">Draft auto-saves as you type.</p>
             )}
 
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? 'Saving…' : post ? 'Update Post' : 'Publish Post'}
+            <Button type="submit" className="w-full" disabled={submitting || compressing}>
+              {submitting ? 'Saving…' : compressing ? 'Processing image…' : post ? 'Update Post' : 'Publish Post'}
             </Button>
           </div>
         </div>
