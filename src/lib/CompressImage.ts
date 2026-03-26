@@ -1,10 +1,12 @@
 /**
  * Compresses an image file client-side using the Canvas API.
- * - Converts everything to JPEG 
+ * - Converts everything to JPEG (best compression for photos/blog images)
  * - Resizes to a max dimension (default 1280px) keeping aspect ratio
  * - GIFs are returned unchanged (canvas kills animation)
  * - If the compressed output is larger than the original, the original
  *   is returned unchanged.
+ *
+ * No external libraries — pure browser Canvas API.
  */
 export interface CompressOptions {
   maxDimension?: number; // default 1280

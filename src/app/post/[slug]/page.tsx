@@ -31,6 +31,17 @@ function extractDescription(raw: string): string {
   return plain.slice(0, 160);
 }
 
+// Pre-builds all active post pages at build time.
+// New posts added after deploy are still served via SSR,
+// then cached — so nothing breaks if Appwrite is slow at build.
+export async function generateStaticParams() {
+  const result = await appwriteService.getPosts();
+  return (result?.documents ?? []).map((post) => ({ slug: post.$id }));
+}
+
+// Rebuild each post page at most once per hour
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await appwriteService.getPost(slug);
@@ -79,5 +90,37 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function Page({ params }: PageProps) {
   const { slug } = await params;
-  return <PostPage slug={slug} />;
+  const post = await appwriteService.getPost(slug);
+
+  // JSON-LD structured data — enables Google rich results
+  // (author, date, image shown directly in search results)
+  const jsonLd = post ? {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: extractDescription(post.content),
+    datePublished: post.$createdAt,
+    dateModified: post.$updatedAt,
+    author: {
+      '@type': 'Person',
+      name: post.authorName ?? 'Unknown',
+    },
+    ...(post.featuredImage && {
+      image: appwriteService.getFilePreview(post.featuredImage)?.toString(),
+    }),
+    ...(post.tags?.length && { keywords: post.tags.join(', ') }),
+    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/post/${slug}`,
+  } : null;
+
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <PostPage slug={slug} />
+    </>
+  );
 }

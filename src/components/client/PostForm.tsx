@@ -142,6 +142,8 @@ export default function PostForm({ post }: PostFormProps) {
         }
 
         router.push(`/post/${dbPost.$id}`);
+        // Revalidate the post page cache immediately
+        fetch(`/api/revalidate?slug=${dbPost.$id}&secret=${process.env.NEXT_PUBLIC_REVALIDATE_SECRET ?? ''}`).catch(() => {});
       } else {
         const toUpload = compressedFile ?? data.image[0];
         const file = await appwriteService.uploadFile(toUpload, userData.$id);
@@ -171,6 +173,8 @@ export default function PostForm({ post }: PostFormProps) {
         try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
         setCompressedFile(null);
         setCompressionInfo(null);
+        // Revalidate the new post page cache immediately
+        fetch(`/api/revalidate?slug=${dbPost.$id}&secret=${process.env.NEXT_PUBLIC_REVALIDATE_SECRET ?? ''}`).catch(() => {});
         router.push(`/post/${dbPost.$id}`);
       }
     } catch {

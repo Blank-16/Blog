@@ -118,6 +118,7 @@ function Toolbar({ editor }: { editor: Editor }) {
 export default function TiptapEditor({ value, onChange }: TiptapEditorProps) {
   const onChangeRef = useRef(onChange);
   const lastJSONRef = useRef('');
+  const isFocusedRef = useRef(false);
   const [, forceUpdate] = useState(0);
 
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
@@ -149,6 +150,8 @@ export default function TiptapEditor({ value, onChange }: TiptapEditorProps) {
         onChangeRef.current(json);
       }
     },
+    onFocus() { isFocusedRef.current = true; },
+    onBlur()  { isFocusedRef.current = false; },
     immediatelyRender: false,
   });
 
@@ -166,12 +169,22 @@ export default function TiptapEditor({ value, onChange }: TiptapEditorProps) {
     };
   }, [editor]);
 
-  // Sync content when editor first becomes ready, or when value changes externally
+  // Sync content only for EXTERNAL changes (draft restore, edit post load).
+  // Skip entirely while the editor is focused — the user is typing and
+  // calling setContent() would reset the cursor position.
   const prevValueRef = useRef<string>('');
   useEffect(() => {
     if (!editor) return;
-    // Skip only if value hasn't changed AND we've already synced at least once
-    if (value === prevValueRef.current && prevValueRef.current !== '') return;
+
+    // User is actively typing — never interrupt with setContent
+    if (isFocusedRef.current) return;
+
+    // Value came from the editor itself — don't feed it back in
+    if (value === lastJSONRef.current) return;
+
+    // Value unchanged from last external sync — nothing to do
+    if (value === prevValueRef.current) return;
+
     prevValueRef.current = value;
 
     const parsed = parseContent(value);
