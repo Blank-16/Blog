@@ -1,3 +1,6 @@
+'use client';
+
+import { useMemo } from 'react';
 import { generateHTML } from '@tiptap/html';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -42,7 +45,7 @@ function renderToHtml(content: string): string {
 }
 
 export default function PostContent({ content }: PostContentProps) {
-  const html = renderToHtml(content);
+  const html = useMemo(() => renderToHtml(content), [content]);
 
   return (
     <div
