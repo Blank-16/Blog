@@ -1,17 +1,22 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
-import { useAppSelector } from '@/store/hooks';
-import appwriteService, { Post, buildPostSlug } from '@/lib/appwrite/appwriteService';
-import { compressImage } from '@/lib/compressImage';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import RTE from '@/components/client/RTE';
+import { useCallback, useEffect, useState } from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { useAppSelector } from "@/store/hooks";
+import appwriteService, {
+  Post,
+  buildPostSlug,
+  buildUrlParam,
+} from "@/lib/appwrite/appwriteService";
+import { compressImage } from "@/lib/compressImage";
+import { revalidatePost } from "@/app/actions/revalidatePost";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import RTE from "@/components/client/RTE";
 
-const DRAFT_KEY = 'blog-post-draft';
+const DRAFT_KEY = "blog-post-draft";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -23,7 +28,7 @@ interface PostFormValues {
   title: string;
   slug: string;
   content: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   image: FileList;
   tags: string;
 }
@@ -33,16 +38,24 @@ interface PostFormProps {
 }
 
 export default function PostForm({ post }: PostFormProps) {
-  const { register, handleSubmit, watch, setValue, control, getValues, setError, formState: { errors } } =
-    useForm<PostFormValues>({
-      defaultValues: {
-        title:   post?.title   ?? '',
-        slug:    post?.$id     ?? '',
-        content: post?.content ?? '',
-        status:  post?.status  ?? 'active',
-        tags:    post?.tags?.join(', ') ?? '',
-      },
-    });
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    control,
+    getValues,
+    setError,
+    formState: { errors },
+  } = useForm<PostFormValues>({
+    defaultValues: {
+      title: post?.title ?? "",
+      slug: post?.$id ?? "",
+      content: post?.content ?? "",
+      status: post?.status ?? "active",
+      tags: post?.tags?.join(", ") ?? "",
+    },
+  });
 
   const router = useRouter();
   const userData = useAppSelector((state) => state.auth.userData);
@@ -55,10 +68,14 @@ export default function PostForm({ post }: PostFormProps) {
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (!saved) return;
-      const draft = JSON.parse(saved) as { title?: string; content?: string; tags?: string };
-      if (draft.title) setValue('title', draft.title);
-      if (draft.content) setValue('content', draft.content);
-      if (draft.tags) setValue('tags', draft.tags);
+      const draft = JSON.parse(saved) as {
+        title?: string;
+        content?: string;
+        tags?: string;
+      };
+      if (draft.title) setValue("title", draft.title);
+      if (draft.content) setValue("content", draft.content);
+      if (draft.tags) setValue("tags", draft.tags);
     } catch {
       // ignore malformed drafts
     }
@@ -72,11 +89,14 @@ export default function PostForm({ post }: PostFormProps) {
       clearTimeout(timer);
       timer = setTimeout(() => {
         try {
-          localStorage.setItem(DRAFT_KEY, JSON.stringify({
-            title: values.title,
-            content: values.content,
-            tags: values.tags,
-          }));
+          localStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({
+              title: values.title,
+              content: values.content,
+              tags: values.tags,
+            }),
+          );
         } catch {
           // ignore storage errors
         }
@@ -95,13 +115,16 @@ export default function PostForm({ post }: PostFormProps) {
 
     // Validate slug starts with letter or digit (Appwrite requirement)
     if (!/^[a-zA-Z0-9]/.test(data.slug)) {
-      setError('slug', { message: 'Slug must start with a letter or number' });
+      setError("slug", { message: "Slug must start with a letter or number" });
       setSubmitting(false);
       return;
     }
 
     const parsedTags = data.tags
-      ? data.tags.split(',').map((t) => t.trim()).filter(Boolean)
+      ? data.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
       : [];
 
     try {
@@ -112,7 +135,7 @@ export default function PostForm({ post }: PostFormProps) {
           const toUpload = compressedFile ?? data.image[0];
           const file = await appwriteService.uploadFile(toUpload, userData.$id);
           if (!file) {
-            setSubmitError('Image upload failed. Please try again.');
+            setSubmitError("Image upload failed. Please try again.");
             setSubmitting(false);
             return;
           }
@@ -121,17 +144,17 @@ export default function PostForm({ post }: PostFormProps) {
 
         // Update the post
         const dbPost = await appwriteService.updatePost({
-          slug:          post.$id,
-          title:         data.title,
-          content:       data.content,
+          slug: post.$id,
+          title: data.title,
+          content: data.content,
           featuredImage: newFileId,
-          status:        data.status,
-          userId:        userData.$id,
-          tags:          parsedTags,
+          status: data.status,
+          userId: userData.$id,
+          tags: parsedTags,
         });
 
         if (!dbPost) {
-          setSubmitError('Failed to update post. Please try again.');
+          setSubmitError("Failed to update post. Please try again.");
           setSubmitting(false);
           return;
         }
@@ -141,57 +164,82 @@ export default function PostForm({ post }: PostFormProps) {
           await appwriteService.deleteFile(post.featuredImage);
         }
 
-        router.push(`/post/${dbPost.$id}`);
-        // Revalidate the post page cache immediately
-        fetch(`/api/revalidate?slug=${dbPost.$id}&secret=${process.env.NEXT_PUBLIC_REVALIDATE_SECRET ?? ''}`).catch(() => {});
+        const urlParam = dbPost.urlSlug ?? dbPost.$id;
+        revalidatePost(urlParam).catch(() => {});
+        router.push(`/post/${urlParam}`);
       } else {
         const toUpload = compressedFile ?? data.image[0];
         const file = await appwriteService.uploadFile(toUpload, userData.$id);
         if (!file) {
-          setError('image', { message: 'Image upload failed. Please try again.' });
+          setError("image", {
+            message: "Image upload failed. Please try again.",
+          });
           setSubmitting(false);
           return;
         }
 
         const dbPost = await appwriteService.createPost({
-          title:         data.title,
-          content:       data.content,
+          title: data.title,
+          content: data.content,
           featuredImage: file.$id,
-          status:        data.status,
-          userId:        userData.$id,
-          authorName:    userData.name,
-          tags:          parsedTags,
+          status: data.status,
+          userId: userData.$id,
+          authorName: userData.name,
+          tags: parsedTags,
         });
 
         if (!dbPost) {
-          setSubmitError('Failed to create post. Please try again.');
+          setSubmitError("Failed to create post. Please try again.");
           setSubmitting(false);
           return;
         }
 
+        // Build pretty URL now that we have the real $id
+        const urlParam = buildUrlParam(userData.name, data.title, dbPost.$id);
+
+        // Store urlSlug on the document (fire and forget — non-critical)
+        appwriteService
+          .updatePost({
+            slug: dbPost.$id,
+            title: dbPost.title,
+            content: dbPost.content,
+            featuredImage: dbPost.featuredImage,
+            status: dbPost.status,
+            urlSlug: urlParam,
+          })
+          .catch(() => {});
+
         // Clear draft on successful publish
-        try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch {
+          /* ignore */
+        }
         setCompressedFile(null);
         setCompressionInfo(null);
-        // Revalidate the new post page cache immediately
-        fetch(`/api/revalidate?slug=${dbPost.$id}&secret=${process.env.NEXT_PUBLIC_REVALIDATE_SECRET ?? ''}`).catch(() => {});
-        router.push(`/post/${dbPost.$id}`);
+        revalidatePost(urlParam).catch(() => {});
+        router.push(`/post/${urlParam}`);
       }
     } catch {
-      setSubmitError('Something went wrong. Please try again.');
+      setSubmitError("Something went wrong. Please try again.");
       setSubmitting(false);
     }
   };
 
-  const slugTransform = useCallback((value: string): string => {
-    if (!userData) return '';
-    return buildPostSlug(userData.name, value);
-  }, [userData]);
+  const slugTransform = useCallback(
+    (value: string): string => {
+      if (!userData) return "";
+      return buildPostSlug(userData.name, value);
+    },
+    [userData],
+  );
 
   useEffect(() => {
     const sub = watch((value, { name }) => {
-      if (name === 'title') {
-        setValue('slug', slugTransform(value.title ?? ''), { shouldValidate: true });
+      if (name === "title") {
+        setValue("slug", slugTransform(value.title ?? ""), {
+          shouldValidate: true,
+        });
       }
     });
     return () => sub.unsubscribe();
@@ -203,7 +251,10 @@ export default function PostForm({ post }: PostFormProps) {
 
   // Live preview of newly selected file
   const [localPreview, setLocalPreview] = useState<string | null>(null);
-  const [compressionInfo, setCompressionInfo] = useState<{ before: number; after: number } | null>(null);
+  const [compressionInfo, setCompressionInfo] = useState<{
+    before: number;
+    after: number;
+  } | null>(null);
   const [compressing, setCompressing] = useState(false);
   // Store the compressed file so submit() uses it instead of raw FileList
   const [compressedFile, setCompressedFile] = useState<File | null>(null);
@@ -248,25 +299,45 @@ export default function PostForm({ post }: PostFormProps) {
     <div className="w-full max-w-5xl mx-auto gsap-fade-up">
       <form onSubmit={handleSubmit(submit)}>
         <div className="flex flex-col lg:flex-row gap-8">
-
           {/* ── Left: content ── */}
           <div className="flex-1 space-y-5">
             <div>
-              <Input label="Title" placeholder="Your post title…" {...register('title', { required: 'Title is required' })} />
-              {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title.message}</p>}
+              <Input
+                label="Title"
+                placeholder="Your post title…"
+                {...register("title", { required: "Title is required" })}
+              />
+              {errors.title && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.title.message}
+                </p>
+              )}
             </div>
             <div>
               <Input
                 label="Slug"
                 placeholder="auto-generated-from-title"
-                {...register('slug', { required: 'Slug is required' })}
+                {...register("slug", { required: "Slug is required" })}
                 onInput={(e) =>
-                  setValue('slug', slugTransform((e.currentTarget as HTMLInputElement).value), { shouldValidate: true })
+                  setValue(
+                    "slug",
+                    slugTransform((e.currentTarget as HTMLInputElement).value),
+                    { shouldValidate: true },
+                  )
                 }
               />
-              {errors.slug && <p className="mt-1 text-xs text-red-500">{errors.slug.message}</p>}
+              {errors.slug && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.slug.message}
+                </p>
+              )}
             </div>
-            <RTE label="Content" name="content" control={control} defaultValue={getValues('content')} />
+            <RTE
+              label="Content"
+              name="content"
+              control={control}
+              defaultValue={getValues("content")}
+            />
           </div>
 
           {/* ── Right: sidebar ── */}
@@ -280,13 +351,19 @@ export default function PostForm({ post }: PostFormProps) {
                 label="Featured Image"
                 type="file"
                 accept="image/png, image/jpg, image/jpeg, image/gif"
-                {...register('image', { required: !post ? 'Featured image is required' : false })}
+                {...register("image", {
+                  required: !post ? "Featured image is required" : false,
+                })}
                 onChange={(e) => {
-                  register('image').onChange(e);
+                  register("image").onChange(e);
                   handleImageChange(e);
                 }}
               />
-              {errors.image && <p className="mt-1 text-xs text-red-500">{errors.image.message}</p>}
+              {errors.image && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.image.message}
+                </p>
+              )}
             </div>
 
             {/* Show new selection first, fall back to existing image */}
@@ -305,9 +382,15 @@ export default function PostForm({ post }: PostFormProps) {
                 )}
                 {!compressing && compressionInfo && (
                   <p className="text-[10px] text-center text-green-600 dark:text-green-400 py-1.5 border-t border-edge">
-                    Compressed {formatBytes(compressionInfo.before)} → {formatBytes(compressionInfo.after)}{' '}
+                    Compressed {formatBytes(compressionInfo.before)} →{" "}
+                    {formatBytes(compressionInfo.after)}{" "}
                     <span className="font-medium">
-                      ({Math.round((1 - compressionInfo.after / compressionInfo.before) * 100)}% smaller)
+                      (
+                      {Math.round(
+                        (1 - compressionInfo.after / compressionInfo.before) *
+                          100,
+                      )}
+                      % smaller)
                     </span>
                   </p>
                 )}
@@ -323,15 +406,15 @@ export default function PostForm({ post }: PostFormProps) {
               <Input
                 label="Tags"
                 placeholder="tech, design, tutorial"
-                {...register('tags')}
+                {...register("tags")}
               />
               <p className="mt-1 text-xs text-muted">Comma-separated</p>
             </div>
 
             <Select
-              options={['active', 'inactive']}
+              options={["active", "inactive"]}
               label="Status"
-              {...register('status', { required: true })}
+              {...register("status", { required: true })}
             />
 
             {submitError && (
@@ -341,11 +424,23 @@ export default function PostForm({ post }: PostFormProps) {
             )}
 
             {!post && (
-              <p className="text-xs text-muted italic">Draft auto-saves as you type.</p>
+              <p className="text-xs text-muted italic">
+                Draft auto-saves as you type.
+              </p>
             )}
 
-            <Button type="submit" className="w-full" disabled={submitting || compressing}>
-              {submitting ? 'Saving…' : compressing ? 'Processing image…' : post ? 'Update Post' : 'Publish Post'}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={submitting || compressing}
+            >
+              {submitting
+                ? "Saving…"
+                : compressing
+                  ? "Processing image…"
+                  : post
+                    ? "Update Post"
+                    : "Publish Post"}
             </Button>
           </div>
         </div>

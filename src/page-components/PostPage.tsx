@@ -9,13 +9,8 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-function readingTime(content: string): string {
-  const words = content.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length;
-  return `${Math.max(1, Math.round(words / 200))} min read`;
-}
-
 export default async function PostPage({ slug }: { slug: string }) {
-  const post = await appwriteService.getPost(slug);
+  const post = await appwriteService.getPostByUrlParam(slug);
   if (!post) notFound();
 
   const imageUrl = post.featuredImage ? appwriteService.getFilePreview(post.featuredImage) : null;
@@ -26,8 +21,6 @@ export default async function PostPage({ slug }: { slug: string }) {
         {post.authorName && <span>{post.authorName}</span>}
         {post.authorName && <span className="opacity-30">·</span>}
         {post.$createdAt && <span>{formatDate(post.$createdAt)}</span>}
-        <span className="opacity-30">·</span>
-        <span>{readingTime(post.content)}</span>
       </div>
 
       <h1 className="font-display text-4xl md:text-5xl leading-tight tracking-[-0.02em] mb-6">

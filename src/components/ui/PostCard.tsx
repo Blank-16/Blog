@@ -10,6 +10,7 @@ interface PostCardProps {
   authorName?: string;
   $createdAt?: string;
   tags?: string[];
+  urlSlug?: string;
   index?: number;
 }
 
@@ -48,30 +49,6 @@ function extractPreview(raw?: string): string {
   return plain.length > 120 ? plain.slice(0, 120) + '…' : plain;
 }
 
-function readingTime(raw?: string): string {
-  if (!raw) return '';
-  const preview = extractPreview(raw);
-  const words = preview.split(/\s+/).filter(Boolean).length;
-  // Rough word count from JSON by counting text nodes
-  let totalWords = words;
-  try {
-    const doc = JSON.parse(raw);
-    if (doc?.type === 'doc') {
-      const all: string[] = [];
-      function walk(nodes: { type?: string; text?: string; content?: unknown[] }[]) {
-        for (const n of nodes) {
-          if (n.type === 'text' && n.text) all.push(n.text);
-          if (n.content) walk(n.content as typeof nodes);
-        }
-      }
-      walk(doc.content);
-      totalWords = all.join(' ').split(/\s+/).filter(Boolean).length;
-    }
-  } catch { /* use preview word count */ }
-  const mins = Math.max(1, Math.round(totalWords / 200));
-  return `${mins} min read`;
-}
-
 export default function PostCard({
   $id,
   title,
@@ -80,14 +57,16 @@ export default function PostCard({
   authorName,
   $createdAt,
   tags,
+  urlSlug,
   index = 0,
 }: PostCardProps) {
   const imageUrl = featuredImage ? appwriteService.getFilePreview(featuredImage) : null;
   const preview = extractPreview(content);
   const isFeatured = index === 0;
+  const href = `/post/${urlSlug ?? $id}`;
 
   return (
-    <Link href={`/post/${$id}`} className="group block h-full">
+    <Link href={href} className="group block h-full">
       <article className={`h-full flex flex-col bg-card hover:bg-subtle transition-colors duration-200 ${isFeatured ? 'p-7' : 'p-5'}`}>
 
         {/* Image */}
@@ -132,12 +111,6 @@ export default function PostCard({
           {authorName && <span>{authorName}</span>}
           {authorName && $createdAt && <span className="opacity-30">·</span>}
           {$createdAt && <span>{formatDate($createdAt)}</span>}
-          {content && (
-            <>
-              <span className="opacity-30">·</span>
-              <span>{readingTime(content)}</span>
-            </>
-          )}
         </div>
       </article>
     </Link>
