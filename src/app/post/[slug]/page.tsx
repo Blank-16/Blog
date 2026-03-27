@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Query } from 'appwrite';
 import appwriteService from '@/lib/appwrite/appwriteService';
 import PostPage from '@/page-components/PostPage';
 
@@ -31,20 +32,27 @@ function extractDescription(raw: string): string {
   return plain.slice(0, 160);
 }
 
-// Pre-builds all active post pages at build time.
-// New posts added after deploy are still served via SSR,
-// then cached — so nothing breaks if Appwrite is slow at build.
+// Hybrid approach:
+// - Top 20 most recent posts are pre-built at deploy time
+// - All other posts (new or older) are rendered on first visit then cached
+// - dynamicParams = true (default) enables the fallback SSR for uncached slugs
 export async function generateStaticParams() {
-  const result = await appwriteService.getPosts();
-  return (result?.documents ?? []).map((post) => ({ slug: post.$id }));
+  const result = await appwriteService.getPosts([
+    Query.equal('status', 'active'),
+    Query.orderDesc('$createdAt'),
+    Query.limit(20),
+  ]);
+  return (result?.documents ?? []).map((post) => ({
+    slug: post.urlSlug ?? post.$id,
+  }));
 }
 
-// Rebuild each post page at most once per hour
-export const revalidate = 3600;
+export const dynamicParams = true; // new slugs → SSR on first visit, then cached
+export const revalidate = 86400;   // rebuild cached pages once every 24 hours
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await appwriteService.getPost(slug);
+  const post = await appwriteService.getPostByUrlParam(slug);
 
   if (!post) return { title: 'Post Not Found' };
 
@@ -90,7 +98,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function Page({ params }: PageProps) {
   const { slug } = await params;
-  const post = await appwriteService.getPost(slug);
+  const post = await appwriteService.getPostByUrlParam(slug);
 
   // JSON-LD structured data — enables Google rich results
   // (author, date, image shown directly in search results)
