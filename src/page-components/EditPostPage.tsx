@@ -1,12 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import AuthGuard from '@/components/client/AuthGuard';
-import Container from '@/components/ui/Container';
-import PostForm from '@/components/client/PostForm';
-import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
-import { useAppSelector } from '@/store/hooks';
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Toaster } from "react-hot-toast";
+import AuthGuard from "@/components/client/AuthGuard";
+import Container from "@/components/ui/Container";
+import PostForm from "@/components/client/PostForm";
+import appwriteService, { Post } from "@/lib/appwrite/appwriteService";
+import { useAppSelector } from "@/store/hooks";
+
+const toastStyle = {
+  background: "var(--bg-card)",
+  color: "var(--text)",
+  border: "1px solid var(--border)",
+  fontSize: "14px",
+};
 
 function EditPostContent() {
   const [post, setPost] = useState<Post | null>(null);
@@ -19,24 +27,29 @@ function EditPostContent() {
   useEffect(() => {
     if (authLoading || !authStatus) return;
     const slug = params?.slug;
-    if (!slug) { router.replace('/'); return; }
+    if (!slug) {
+      router.replace("/");
+      return;
+    }
     appwriteService.getPost(slug).then((result) => {
       if (result) setPost(result);
       else setNotFound(true);
     });
   }, [params?.slug, router, authStatus, authLoading]);
 
-  if (authLoading || (!post && !notFound)) return (
-    <div className="py-24 text-center">
-      <p className="text-2xl font-display text-muted">Loading…</p>
-    </div>
-  );
+  if (authLoading || (!post && !notFound))
+    return (
+      <div className="py-24 text-center">
+        <p className="text-2xl font-display text-muted">Loading…</p>
+      </div>
+    );
 
-  if (notFound) return (
-    <div className="py-24 text-center">
-      <p className="text-2xl font-display text-muted">Post not found.</p>
-    </div>
-  );
+  if (notFound)
+    return (
+      <div className="py-24 text-center">
+        <p className="text-2xl font-display text-muted">Post not found.</p>
+      </div>
+    );
 
   if (!post) return null;
 
@@ -44,7 +57,9 @@ function EditPostContent() {
     <div className="py-12">
       <Container>
         <div className="mb-10">
-          <p className="text-xs font-medium tracking-[0.2em] uppercase mb-2 text-muted">Editing</p>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase mb-2 text-muted">
+            Editing
+          </p>
           <h1 className="text-4xl font-display">{post.title}</h1>
         </div>
         <PostForm post={post} />
@@ -56,6 +71,7 @@ function EditPostContent() {
 export default function EditPostPage() {
   return (
     <AuthGuard authentication={true}>
+      <Toaster position="top-right" toastOptions={{ style: toastStyle }} />
       <EditPostContent />
     </AuthGuard>
   );
