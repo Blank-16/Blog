@@ -11,6 +11,7 @@ import appwriteService, {
 } from "@/lib/appwrite/appwriteService";
 import { compressImage } from "@/lib/compressImage";
 import { revalidatePost } from "@/app/actions/revalidatePost";
+import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -60,7 +61,6 @@ export default function PostForm({ post }: PostFormProps) {
   const router = useRouter();
   const userData = useAppSelector((state) => state.auth.userData);
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Restore draft on mount (new post only)
   useEffect(() => {
@@ -111,9 +111,7 @@ export default function PostForm({ post }: PostFormProps) {
   const submit: SubmitHandler<PostFormValues> = async (data) => {
     if (!userData || submitting) return;
     setSubmitting(true);
-    setSubmitError(null);
 
-    // Validate slug starts with letter or digit (Appwrite requirement)
     if (!/^[a-zA-Z0-9]/.test(data.slug)) {
       setError("slug", { message: "Slug must start with a letter or number" });
       setSubmitting(false);
@@ -127,22 +125,24 @@ export default function PostForm({ post }: PostFormProps) {
           .filter(Boolean)
       : [];
 
+    const toastId = toast.loading(post ? "Updating post…" : "Publishing post…");
+
     try {
       if (post) {
-        // Upload new image first (if provided)
         let newFileId = post.featuredImage;
         if (data.image[0]) {
           const toUpload = compressedFile ?? data.image[0];
           const file = await appwriteService.uploadFile(toUpload, userData.$id);
           if (!file) {
-            setSubmitError("Image upload failed. Please try again.");
+            toast.error("Image upload failed. Please try again.", {
+              id: toastId,
+            });
             setSubmitting(false);
             return;
           }
           newFileId = file.$id;
         }
 
-        // Update the post
         const dbPost = await appwriteService.updatePost({
           slug: post.$id,
           title: data.title,
@@ -154,23 +154,28 @@ export default function PostForm({ post }: PostFormProps) {
         });
 
         if (!dbPost) {
-          setSubmitError("Failed to update post. Please try again.");
+          toast.error("Failed to update post. Please try again.", {
+            id: toastId,
+          });
           setSubmitting(false);
           return;
         }
 
-        // Only delete old image AFTER confirmed update success
         if (data.image[0] && newFileId !== post.featuredImage) {
           await appwriteService.deleteFile(post.featuredImage);
         }
 
         const urlParam = dbPost.urlSlug ?? dbPost.$id;
+        toast.success("Post updated!", { id: toastId });
         revalidatePost(urlParam).catch(() => {});
         router.push(`/post/${urlParam}`);
       } else {
         const toUpload = compressedFile ?? data.image[0];
         const file = await appwriteService.uploadFile(toUpload, userData.$id);
         if (!file) {
+          toast.error("Image upload failed. Please try again.", {
+            id: toastId,
+          });
           setError("image", {
             message: "Image upload failed. Please try again.",
           });
@@ -189,15 +194,15 @@ export default function PostForm({ post }: PostFormProps) {
         });
 
         if (!dbPost) {
-          setSubmitError("Failed to create post. Please try again.");
+          toast.error("Failed to create post. Please try again.", {
+            id: toastId,
+          });
           setSubmitting(false);
           return;
         }
 
-        // Build pretty URL now that we have the real $id
         const urlParam = buildUrlParam(userData.name, data.title, dbPost.$id);
 
-        // Store urlSlug on the document (fire and forget — non-critical)
         appwriteService
           .updatePost({
             slug: dbPost.$id,
@@ -209,7 +214,6 @@ export default function PostForm({ post }: PostFormProps) {
           })
           .catch(() => {});
 
-        // Clear draft on successful publish
         try {
           localStorage.removeItem(DRAFT_KEY);
         } catch {
@@ -217,11 +221,12 @@ export default function PostForm({ post }: PostFormProps) {
         }
         setCompressedFile(null);
         setCompressionInfo(null);
+        toast.success("Post published!", { id: toastId });
         revalidatePost(urlParam).catch(() => {});
         router.push(`/post/${urlParam}`);
       }
     } catch {
-      setSubmitError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.", { id: toastId });
       setSubmitting(false);
     }
   };
@@ -416,12 +421,6 @@ export default function PostForm({ post }: PostFormProps) {
               label="Status"
               {...register("status", { required: true })}
             />
-
-            {submitError && (
-              <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg px-3 py-2">
-                {submitError}
-              </p>
-            )}
 
             {!post && (
               <p className="text-xs text-muted italic">
