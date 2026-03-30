@@ -26,7 +26,12 @@ export interface Post extends Models.Document {
   tags?: string[];
   ratings?: number[];
   reviews?: string[];
-  urlSlug?: string;   // human-readable URL segment e.g. "john-how-to-build--abc12345"
+  urlSlug?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+  canonicalUrl?: string;
+  noIndex?: boolean;
 }
 
 interface CreatePostParams {
@@ -38,6 +43,11 @@ interface CreatePostParams {
   authorName: string;
   tags?: string[];
   urlSlug?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+  canonicalUrl?: string;
+  noIndex?: boolean;
 }
 
 interface UpdatePostParams {
@@ -50,6 +60,11 @@ interface UpdatePostParams {
   authorName?: string;
   tags?: string[];
   urlSlug?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+  canonicalUrl?: string;
+  noIndex?: boolean;
 }
 
 export class AppwriteService {
@@ -103,6 +118,11 @@ export class AppwriteService {
     authorName,
     tags,
     urlSlug,
+    metaTitle,
+    metaDescription,
+    focusKeyword,
+    canonicalUrl,
+    noIndex,
   }: UpdatePostParams): Promise<Post | null> {
     try {
       const updateData: Partial<Omit<Post, keyof Models.Document>> = {
@@ -114,6 +134,12 @@ export class AppwriteService {
       if (authorName !== undefined) updateData.authorName = authorName;
       if (tags !== undefined) updateData.tags = tags;
       if (urlSlug !== undefined) updateData.urlSlug = urlSlug;
+      if (metaTitle !== undefined) updateData.metaTitle = metaTitle;
+      if (metaDescription !== undefined)
+        updateData.metaDescription = metaDescription;
+      if (focusKeyword !== undefined) updateData.focusKeyword = focusKeyword;
+      if (canonicalUrl !== undefined) updateData.canonicalUrl = canonicalUrl;
+      if (noIndex !== undefined) updateData.noIndex = noIndex;
 
       return await this.getDatabases().updateDocument<Post>(
         config.appwriteDatabaseId,
@@ -160,7 +186,7 @@ export class AppwriteService {
    * treating the whole string as a raw $id (handles old posts with no urlSlug).
    */
   async getPostByUrlParam(urlParam: string): Promise<Post | null> {
-    const sep = urlParam.lastIndexOf('--');
+    const sep = urlParam.lastIndexOf("--");
     const realId = sep !== -1 ? urlParam.slice(sep + 2) : urlParam;
     return this.getPost(realId);
   }
@@ -232,7 +258,11 @@ export class AppwriteService {
    * Appends a star rating (1–5) to the post's ratings[] array.
    * Returns the updated post or null on failure.
    */
-  async addRating(postId: string, existingRatings: number[], rating: number): Promise<Post | null> {
+  async addRating(
+    postId: string,
+    existingRatings: number[],
+    rating: number,
+  ): Promise<Post | null> {
     try {
       return await this.getDatabases().updateDocument<Post>(
         config.appwriteDatabaseId,
@@ -251,7 +281,11 @@ export class AppwriteService {
    * Each review is stored as "AuthorName|||Comment text" so we can
    * split author from body on the client without a separate collection.
    */
-  async addReview(postId: string, existingReviews: string[], review: string): Promise<Post | null> {
+  async addReview(
+    postId: string,
+    existingReviews: string[],
+    review: string,
+  ): Promise<Post | null> {
     try {
       return await this.getDatabases().updateDocument<Post>(
         config.appwriteDatabaseId,
@@ -273,7 +307,7 @@ export class AppwriteService {
       const result = await this.getDatabases().listDocuments<Admin>(
         config.appwriteDatabaseId,
         config.appwriteAdminsCollectionId,
-        [Query.equal('userId', userId), Query.limit(1)],
+        [Query.equal("userId", userId), Query.limit(1)],
       );
       return result.total > 0;
     } catch {
@@ -339,8 +373,8 @@ export class AppwriteService {
         config.appwriteDatabaseId,
         config.appwriteCollectionId,
         [
-          Query.equal('userId', userId),
-          Query.greaterThanEqual('$createdAt', startOfDay.toISOString()),
+          Query.equal("userId", userId),
+          Query.greaterThanEqual("$createdAt", startOfDay.toISOString()),
           Query.limit(1), // we only need the count, not the docs
         ],
       );
@@ -355,7 +389,7 @@ export class AppwriteService {
     try {
       const now = new Date();
       const day = now.getUTCDay(); // 0=Sun, 1=Mon…
-      const diffToMonday = (day === 0 ? -6 : 1 - day);
+      const diffToMonday = day === 0 ? -6 : 1 - day;
       const startOfWeek = new Date(now);
       startOfWeek.setUTCDate(now.getUTCDate() + diffToMonday);
       startOfWeek.setUTCHours(0, 0, 0, 0);
@@ -363,8 +397,8 @@ export class AppwriteService {
         config.appwriteDatabaseId,
         config.appwriteCollectionId,
         [
-          Query.equal('userId', userId),
-          Query.greaterThanEqual('$createdAt', startOfWeek.toISOString()),
+          Query.equal("userId", userId),
+          Query.greaterThanEqual("$createdAt", startOfWeek.toISOString()),
           Query.limit(1),
         ],
       );
@@ -382,7 +416,7 @@ export class AppwriteService {
       const result = await this.getDatabases().listDocuments<Post>(
         config.appwriteDatabaseId,
         config.appwriteCollectionId,
-        [Query.orderDesc('$createdAt'), Query.limit(limit)],
+        [Query.orderDesc("$createdAt"), Query.limit(limit)],
       );
       return result.documents;
     } catch {
@@ -413,7 +447,10 @@ export class AppwriteService {
       const result = await this.getDatabases().listDocuments<Post>(
         config.appwriteDatabaseId,
         config.appwriteCollectionId,
-        [Query.greaterThanEqual('$createdAt', since.toISOString()), Query.limit(1)],
+        [
+          Query.greaterThanEqual("$createdAt", since.toISOString()),
+          Query.limit(1),
+        ],
       );
       return result.total;
     } catch {
@@ -440,13 +477,13 @@ export function buildPostSlug(authorName: string, title: string): string {
     s
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
 
   const authorPart = slugify(authorName).slice(0, 20);
-  const titlePart  = slugify(title).slice(0, 40);
-  const combined   = authorPart ? `${authorPart}-${titlePart}` : titlePart;
-  return combined.replace(/-+$/, '') || 'post';
+  const titlePart = slugify(title).slice(0, 40);
+  const combined = authorPart ? `${authorPart}-${titlePart}` : titlePart;
+  return combined.replace(/-+$/, "") || "post";
 }
 
 /**
@@ -454,7 +491,11 @@ export function buildPostSlug(authorName: string, title: string): string {
  * e.g. "john-doe-how-to-build-a-blog--abc12345xyz"
  * The "--" separator lets us extract the real ID on lookup.
  */
-export function buildUrlParam(authorName: string, title: string, id: string): string {
+export function buildUrlParam(
+  authorName: string,
+  title: string,
+  id: string,
+): string {
   const slug = buildPostSlug(authorName, title);
   return `${slug}--${id}`;
 }

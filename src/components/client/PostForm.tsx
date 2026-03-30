@@ -16,6 +16,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import RTE from "@/components/client/RTE";
+import SeoPanel from "@/components/client/SeoPanel";
 
 const DRAFT_KEY = "blog-post-draft";
 
@@ -32,6 +33,11 @@ interface PostFormValues {
   status: "active" | "inactive";
   image: FileList;
   tags: string;
+  metaTitle: string;
+  metaDescription: string;
+  focusKeyword: string;
+  canonicalUrl: string;
+  noIndex: boolean;
 }
 
 interface PostFormProps {
@@ -55,12 +61,30 @@ export default function PostForm({ post }: PostFormProps) {
       content: post?.content ?? "",
       status: post?.status ?? "active",
       tags: post?.tags?.join(", ") ?? "",
+      metaTitle: post?.metaTitle ?? "",
+      metaDescription: post?.metaDescription ?? "",
+      focusKeyword: post?.focusKeyword ?? "",
+      canonicalUrl: post?.canonicalUrl ?? "",
+      noIndex: post?.noIndex ?? false,
     },
   });
 
   const router = useRouter();
   const userData = useAppSelector((state) => state.auth.userData);
   const [submitting, setSubmitting] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [compressionInfo, setCompressionInfo] = useState<{
+    before: number;
+    after: number;
+  } | null>(null);
+  const [compressing, setCompressing] = useState(false);
+  const [compressedFile, setCompressedFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (!userData) return;
+    appwriteService.isAdmin(userData.$id).then(setIsAdmin);
+  }, [userData]);
 
   // Restore draft on mount (new post only)
   useEffect(() => {
@@ -151,6 +175,11 @@ export default function PostForm({ post }: PostFormProps) {
           status: data.status,
           userId: userData.$id,
           tags: parsedTags,
+          metaTitle: data.metaTitle || undefined,
+          metaDescription: data.metaDescription || undefined,
+          focusKeyword: data.focusKeyword || undefined,
+          canonicalUrl: data.canonicalUrl || undefined,
+          noIndex: data.noIndex,
         });
 
         if (!dbPost) {
@@ -191,6 +220,11 @@ export default function PostForm({ post }: PostFormProps) {
           userId: userData.$id,
           authorName: userData.name,
           tags: parsedTags,
+          metaTitle: data.metaTitle || undefined,
+          metaDescription: data.metaDescription || undefined,
+          focusKeyword: data.focusKeyword || undefined,
+          canonicalUrl: data.canonicalUrl || undefined,
+          noIndex: data.noIndex,
         });
 
         if (!dbPost) {
@@ -253,16 +287,6 @@ export default function PostForm({ post }: PostFormProps) {
   const imagePreviewUrl = post?.featuredImage
     ? appwriteService.getFilePreview(post.featuredImage)
     : null;
-
-  // Live preview of newly selected file
-  const [localPreview, setLocalPreview] = useState<string | null>(null);
-  const [compressionInfo, setCompressionInfo] = useState<{
-    before: number;
-    after: number;
-  } | null>(null);
-  const [compressing, setCompressing] = useState(false);
-  // Store the compressed file so submit() uses it instead of raw FileList
-  const [compressedFile, setCompressedFile] = useState<File | null>(null);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -444,6 +468,16 @@ export default function PostForm({ post }: PostFormProps) {
           </div>
         </div>
       </form>
+
+      {isAdmin && (
+        <div className="mt-10">
+          <SeoPanel
+            register={register}
+            watch={watch}
+            postTitle={watch("title") ?? ""}
+          />
+        </div>
+      )}
     </div>
   );
 }
