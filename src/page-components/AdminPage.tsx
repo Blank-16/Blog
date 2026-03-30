@@ -9,6 +9,7 @@ import Container from "@/components/ui/Container";
 import { useAppSelector } from "@/store/hooks";
 import appwriteService, { Admin, Post } from "@/lib/appwrite/appwriteService";
 import { DAILY_LIMIT, WEEKLY_LIMIT } from "@/lib/usePostLimits";
+import DashboardCharts from "@/components/client/DashboardCharts";
 
 // Types
 type Tab = "overview" | "posts" | "admins";
@@ -194,6 +195,12 @@ function OverviewTab({ stats, posts }: { stats: Stats; posts: Post[] }) {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Charts */}
+      <section>
+        <h2 className="font-display text-xl mb-4">Metrics</h2>
+        <DashboardCharts posts={posts} stats={stats} />
       </section>
     </div>
   );
