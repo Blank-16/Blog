@@ -94,7 +94,7 @@ export default async function HomePage() {
           {featured && (
             <section className="border-b border-edge">
               <Link
-                href={`/post/${featured.$id}`}
+                href={`/post/${featured.urlSlug ?? featured.$id}`}
                 className="group block max-w-5xl mx-auto px-6 py-12 md:py-16"
               >
                 <div className="md:grid md:grid-cols-[1fr_auto] md:gap-12 md:items-start">
