@@ -177,6 +177,7 @@ export default function Header() {
 
   const navItems: NavItem[] = [
     { name: "Home", slug: "/", active: true },
+    { name: "Search", slug: "/search", active: true },
     { name: "Login", slug: "/login", active: !authStatus },
     { name: "Signup", slug: "/signup", active: !authStatus },
     { name: "All Posts", slug: "/all-posts", active: authStatus },
