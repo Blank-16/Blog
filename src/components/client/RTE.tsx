@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { Controller, Control, FieldValues, Path } from 'react-hook-form';
+import dynamic from "next/dynamic";
+import {
+  Controller,
+  Control,
+  ControllerProps,
+  FieldValues,
+  Path,
+} from "react-hook-form";
 
-const TiptapEditor = dynamic(() => import('@/components/client/TiptapEditor'), {
+const TiptapEditor = dynamic(() => import("@/components/client/TiptapEditor"), {
   ssr: false,
   loading: () => (
     <div className="rounded-xl border border-edge h-48 flex items-center justify-center text-sm text-muted">
@@ -17,9 +23,16 @@ interface RTEProps<T extends FieldValues> {
   name: Path<T>;
   label?: string;
   defaultValue?: string;
+  rules?: ControllerProps<T>["rules"];
 }
 
-export default function RTE<T extends FieldValues>({ control, name, label, defaultValue = '' }: RTEProps<T>) {
+export default function RTE<T extends FieldValues>({
+  control,
+  name,
+  label,
+  defaultValue = "",
+  rules,
+}: RTEProps<T>) {
   return (
     <div className="w-full">
       {label && (
@@ -32,8 +45,9 @@ export default function RTE<T extends FieldValues>({ control, name, label, defau
         name={name}
         control={control}
         defaultValue={defaultValue as never}
+        rules={rules}
         render={({ field: { onChange, value } }) => (
-          <TiptapEditor value={value ?? ''} onChange={onChange} />
+          <TiptapEditor value={value ?? ""} onChange={onChange} />
         )}
       />
     </div>
