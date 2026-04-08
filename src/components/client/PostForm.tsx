@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
 import appwriteService, {
@@ -39,6 +39,15 @@ interface PostFormValues {
   canonicalUrl: string;
   noIndex: boolean;
 }
+
+const REQUIRED_FIELD_LABELS: Partial<Record<keyof PostFormValues, string>> = {
+  title: "Title",
+  slug: "Slug",
+  content: "Content",
+  image: "Featured Image",
+  status: "Status",
+  tags: "Tags",
+};
 
 interface PostFormProps {
   post?: Post;
@@ -265,6 +274,25 @@ export default function PostForm({ post }: PostFormProps) {
     }
   };
 
+  const onInvalid = (formErrors: FieldErrors<PostFormValues>) => {
+    const missingFields = Object.keys(formErrors)
+      .filter(
+        (key): key is keyof PostFormValues => key in REQUIRED_FIELD_LABELS,
+      )
+      .map((key) => REQUIRED_FIELD_LABELS[key])
+      .filter((label): label is string => Boolean(label));
+
+    if (missingFields.length === 0) {
+      toast.error("Please fill the required fields before publishing.");
+      return;
+    }
+
+    const formattedFields = missingFields
+      .map((field) => `• ${field}`)
+      .join("\n");
+    toast.error(`Please fill the following:\n${formattedFields}`);
+  };
+
   const slugTransform = useCallback(
     (value: string): string => {
       if (!userData) return "";
@@ -326,7 +354,7 @@ export default function PostForm({ post }: PostFormProps) {
 
   return (
     <div className="w-full max-w-5xl mx-auto gsap-fade-up">
-      <form onSubmit={handleSubmit(submit)}>
+      <form onSubmit={handleSubmit(submit, onInvalid)}>
         <div className="flex flex-col lg:flex-row gap-8">
           {/* ── Left: content ── */}
           <div className="flex-1 space-y-5">
@@ -366,11 +394,26 @@ export default function PostForm({ post }: PostFormProps) {
               name="content"
               control={control}
               defaultValue={getValues("content")}
+              rules={{
+                required: "Content is required",
+                validate: (value) => {
+                  const content = typeof value === "string" ? value : "";
+                  return (
+                    content.replace(/<[^>]*>/g, "").trim().length > 0 ||
+                    "Content is required"
+                  );
+                },
+              }}
             />
+            {errors.content && (
+              <p className="mt-1 text-xs text-red-500">
+                {errors.content.message}
+              </p>
+            )}
           </div>
 
           {/* ── Right: sidebar ── */}
-          <div className="lg:w-72 flex-shrink-0 rounded-xl p-5 space-y-5 self-start sticky top-20 border bg-card border-edge">
+          <div className="lg:w-72 shrink-0 rounded-xl p-5 space-y-5 self-start sticky top-20 border bg-card border-edge">
             <h3 className="text-xs font-medium tracking-widest uppercase text-muted">
               Publish Settings
             </h3>
@@ -435,16 +478,34 @@ export default function PostForm({ post }: PostFormProps) {
               <Input
                 label="Tags"
                 placeholder="tech, design, tutorial"
-                {...register("tags")}
+                {...register("tags", {
+                  required: "At least one tag is required",
+                  validate: (value) =>
+                    value
+                      .split(",")
+                      .map((tag) => tag.trim())
+                      .filter(Boolean).length > 0 ||
+                    "At least one tag is required",
+                })}
               />
               <p className="mt-1 text-xs text-muted">Comma-separated</p>
+              {errors.tags && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.tags.message}
+                </p>
+              )}
             </div>
 
             <Select
               options={["active", "inactive"]}
               label="Status"
-              {...register("status", { required: true })}
+              {...register("status", { required: "Status is required" })}
             />
+            {errors.status && (
+              <p className="mt-1 text-xs text-red-500">
+                {errors.status.message}
+              </p>
+            )}
 
             {!post && (
               <p className="text-xs text-muted italic">
