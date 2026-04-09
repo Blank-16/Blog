@@ -19,10 +19,14 @@ interface LoginFormValues {
 export default function LoginForm() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { register, handleSubmit } = useForm<LoginFormValues>();
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<LoginFormValues>();
   const [error, setError] = useState<string>('');
 
-  const login: SubmitHandler<LoginFormValues> = async (data) => {
+  const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     setError('');
     try {
       const session = await authService.login(data);
@@ -34,7 +38,7 @@ export default function LoginForm() {
         }
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     }
   };
 
@@ -62,10 +66,24 @@ export default function LoginForm() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit(login)} className="space-y-4">
-          <Input label="Email" placeholder="you@example.com" type="email" {...register('email', { required: true })} />
-          <Input label="Password" type="password" placeholder="••••••••" {...register('password', { required: true })} />
-          <Button type="submit" className="w-full mt-2">Sign In</Button>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Input
+            label="Email"
+            placeholder="you@example.com"
+            type="email"
+            autoComplete="email"
+            {...register('email', { required: true })}
+          />
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Your password"
+            autoComplete="current-password"
+            {...register('password', { required: true })}
+          />
+          <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
+            {isSubmitting ? 'Signing in...' : 'Sign In'}
+          </Button>
         </form>
       </div>
     </div>

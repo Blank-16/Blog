@@ -1,10 +1,13 @@
 /**
- *   types.ts         — Post, Admin interfaces
- *   client.ts        — Appwrite client singleton
- *   postService.ts   — post CRUD, search, ratings, reviews
- *   adminService.ts  — admin management, rate limiting, dashboard analytics
- *   storageService.ts — file upload/delete/preview
- *   slugUtils.ts     — buildPostSlug, buildUrlParam
+ * Barrel re-export for all Appwrite services.
+ *
+ * Modules:
+ *   types.ts          - Post, Admin interfaces
+ *   client.ts         - Appwrite client singleton
+ *   postService.ts    - post CRUD, search, ratings, reviews
+ *   adminService.ts   - admin management, rate limiting, dashboard analytics
+ *   storageService.ts - file upload/delete/preview
+ *   slugUtils.ts      - buildPostSlug, buildUrlParam
  */
 
 export type { Post, Admin, CreatePostParams, UpdatePostParams } from './types';
@@ -37,18 +40,19 @@ export {
 export {
   uploadFile,
   deleteFile,
+  deleteFiles,
   getFilePreview,
 } from './storageService';
 
 export { buildPostSlug, buildUrlParam } from './slugUtils';
 
 /**
- * Default export — a plain object mirroring the old AppwriteService class API.
- * Components that use `appwriteService.createPost(...)` continue to work
+ * Default export - a plain object mirroring the old AppwriteService class API.
+ * Components that use appwriteService.createPost(...) continue to work
  * without any changes.
  */
-import * as postSvc    from './postService';
-import * as adminSvc   from './adminService';
+import * as postSvc from './postService';
+import * as adminSvc from './adminService';
 import * as storageSvc from './storageService';
 
 const appwriteService = {

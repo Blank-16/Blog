@@ -2,19 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Toaster } from "react-hot-toast";
 import AuthGuard from "@/components/client/AuthGuard";
 import Container from "@/components/ui/Container";
 import PostForm from "@/components/client/PostForm";
 import appwriteService, { Post } from "@/lib/appwrite/appwriteService";
 import { useAppSelector } from "@/store/hooks";
-
-const toastStyle = {
-  background: "var(--bg-card)",
-  color: "var(--text)",
-  border: "1px solid var(--border)",
-  fontSize: "14px",
-};
 
 function EditPostContent() {
   const [post, setPost] = useState<Post | null>(null);
@@ -24,32 +16,39 @@ function EditPostContent() {
   const authStatus = useAppSelector((state) => state.auth.status);
   const authLoading = useAppSelector((state) => state.auth.loading);
 
+  // Extract to a stable string so the dependency array holds a primitive
+  const slug = params?.slug ?? null;
+
   useEffect(() => {
     if (authLoading || !authStatus) return;
-    const slug = params?.slug;
     if (!slug) {
-      router.replace("/");
+      router.replace('/');
       return;
     }
+    let cancelled = false;
     appwriteService.getPost(slug).then((result) => {
+      if (cancelled) return;
       if (result) setPost(result);
       else setNotFound(true);
     });
-  }, [params?.slug, router, authStatus, authLoading]);
+    return () => { cancelled = true; };
+  }, [slug, router, authStatus, authLoading]);
 
-  if (authLoading || (!post && !notFound))
+  if (authLoading || (!post && !notFound)) {
     return (
       <div className="py-24 text-center">
-        <p className="text-2xl font-display text-muted">Loading…</p>
+        <p className="text-2xl font-display text-muted">Loading...</p>
       </div>
     );
+  }
 
-  if (notFound)
+  if (notFound) {
     return (
       <div className="py-24 text-center">
         <p className="text-2xl font-display text-muted">Post not found.</p>
       </div>
     );
+  }
 
   if (!post) return null;
 
@@ -71,7 +70,6 @@ function EditPostContent() {
 export default function EditPostPage() {
   return (
     <AuthGuard authentication={true}>
-      <Toaster position="top-right" toastOptions={{ style: toastStyle }} />
       <EditPostContent />
     </AuthGuard>
   );

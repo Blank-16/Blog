@@ -12,26 +12,34 @@ export default function HomeGrid({ posts }: HomeGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cards = gridRef.current?.querySelectorAll<HTMLElement>('.post-card-item');
-    if (!cards || cards.length === 0) return;
+    const grid = gridRef.current;
+    if (!grid) return;
 
+    const cards = grid.querySelectorAll<HTMLElement>('.post-card-item');
+    if (cards.length === 0) return;
+
+    // Set initial hidden state via CSS custom properties so Tailwind
+    // classes on the element itself are not clobbered.
     cards.forEach((card) => {
       card.style.opacity = '0';
       card.style.transform = 'translateY(16px)';
       card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      card.style.willChange = 'opacity, transform';
     });
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            setTimeout(() => {
-              el.style.opacity = '1';
-              el.style.transform = 'translateY(0)';
-            }, Number(el.dataset.index ?? 0) * 55);
-            observer.unobserve(el);
-          }
+          if (!entry.isIntersecting) return;
+          const el = entry.target as HTMLElement;
+          const delay = Number(el.dataset.index ?? 0) * 55;
+          setTimeout(() => {
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+            // Remove willChange after animation so the GPU layer is freed
+            setTimeout(() => { el.style.willChange = 'auto'; }, 400 + delay);
+          }, delay);
+          observer.unobserve(el);
         });
       },
       { threshold: 0.05, rootMargin: '0px 0px -32px 0px' }

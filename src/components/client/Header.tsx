@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAppSelector } from "@/store/hooks";
+import appwriteService from "@/lib/appwrite/appwriteService";
 import Logo from "@/components/ui/Logo";
 import LogoutBtn from "@/components/client/LogoutBtn";
 import Container from "@/components/ui/Container";
@@ -15,7 +16,6 @@ interface NavItem {
   active: boolean;
 }
 
-// Animated hamburger icon
 function HamburgerIcon({ open }: { open: boolean }) {
   return (
     <div className="w-5 h-4 flex flex-col justify-between cursor-pointer">
@@ -35,7 +35,6 @@ function HamburgerIcon({ open }: { open: boolean }) {
   );
 }
 
-// Floating mobile menu
 interface MobileMenuProps {
   open: boolean;
   items: NavItem[];
@@ -44,16 +43,11 @@ interface MobileMenuProps {
   onClose: () => void;
 }
 
-function MobileMenu({
-  open,
-  items,
-  authStatus,
-  onNavigate,
-  onClose,
-}: MobileMenuProps) {
+function MobileMenu({ open, items, authStatus, onNavigate, onClose }: MobileMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
+  // Close on outside click - delay attachment so the toggle click
+  // does not immediately re-close the menu.
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -61,23 +55,17 @@ function MobileMenu({
         onClose();
       }
     };
-    // Delay so the open-click itself doesn't immediately close
-    const id = setTimeout(
-      () => document.addEventListener("mousedown", handler),
-      10,
-    );
+    const id = setTimeout(() => document.addEventListener("mousedown", handler), 10);
     return () => {
       clearTimeout(id);
       document.removeEventListener("mousedown", handler);
     };
   }, [open, onClose]);
 
-  // Lock body scroll when open
+  // Prevent body scroll while menu is open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   const activeItems = items.filter((i) => i.active);
@@ -99,13 +87,12 @@ function MobileMenu({
         aria-label="Navigation menu"
         className={`fixed z-50 top-20 right-4 w-64 rounded-2xl border border-edge bg-card shadow-2xl
           transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-          ${
-            open
-              ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-              : "opacity-0 scale-90 -translate-y-4 pointer-events-none"
+          ${open
+            ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 scale-90 -translate-y-4 pointer-events-none"
           }`}
       >
-        {/* Arrow pointing up to hamburger */}
+        {/* Arrow pointing up toward hamburger */}
         <div
           className={`absolute -top-2 right-5 w-4 h-4 rotate-45 border-l border-t border-edge bg-card
             transition-all duration-300 ${open ? "opacity-100" : "opacity-0"}`}
@@ -117,14 +104,14 @@ function MobileMenu({
             <button
               key={item.name}
               onClick={() => onNavigate(item.slug)}
-              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-ink
+              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-ink
                 transition-all duration-150 hover:bg-subtle active:scale-[0.98]
-                flex items-center justify-between group`}
+                flex items-center justify-between group"
               style={{ transitionDelay: open ? `${i * 40}ms` : "0ms" }}
             >
               <span>{item.name}</span>
               <span className="opacity-0 group-hover:opacity-40 transition-opacity text-xs">
-                →
+                &rarr;
               </span>
             </button>
           ))}
@@ -143,7 +130,6 @@ function MobileMenu({
   );
 }
 
-// Header
 export default function Header() {
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -151,29 +137,34 @@ export default function Header() {
   const authStatus = useAppSelector((state) => state.auth.status);
   const userData = useAppSelector((state) => state.auth.userData);
   const router = useRouter();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+  // Stable resize handler - avoids re-registering on every render
+  const handleResize = useCallback(() => {
+    setIsMobile(window.innerWidth <= 768);
   }, []);
 
-  // Check admin status whenever user logs in
+  useEffect(() => {
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [handleResize]);
+
+  // Check admin status whenever the logged-in user changes.
+  // Uses the direct import instead of a dynamic import so there is no
+  // extra module evaluation delay that causes an "Admin" badge flash.
   useEffect(() => {
     if (!userData) {
       setIsAdmin(false);
       return;
     }
-    import("@/lib/appwrite/appwriteService").then(({ default: svc }) => {
-      svc.isAdmin(userData.$id).then(setIsAdmin);
-    });
+    appwriteService.isAdmin(userData.$id).then(setIsAdmin);
   }, [userData]);
 
-  // Close menu on route change
+  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
-  }, []);
+  }, [pathname]);
 
   const navItems: NavItem[] = [
     { name: "Home", slug: "/", active: true },
@@ -195,7 +186,7 @@ export default function Header() {
       <Container>
         <nav className="flex items-center h-14">
           <Link href="/" className="mr-8 flex-shrink-0 flex items-center gap-2">
-            <Logo />
+            <Logo priority />
             {isAdmin && (
               <span
                 className="text-[10px] font-medium tracking-widest uppercase px-2 py-0.5
@@ -209,8 +200,6 @@ export default function Header() {
           {isMobile ? (
             <div className="ml-auto flex items-center gap-3">
               <ThemeToggle />
-
-              {/* Hamburger button */}
               <button
                 onClick={() => setMobileMenuOpen((v) => !v)}
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -219,8 +208,6 @@ export default function Header() {
               >
                 <HamburgerIcon open={mobileMenuOpen} />
               </button>
-
-              {/* Floating animated menu */}
               <MobileMenu
                 open={mobileMenuOpen}
                 items={navItems}

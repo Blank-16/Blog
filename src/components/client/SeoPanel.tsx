@@ -45,9 +45,9 @@ function ScoreRow({
   return (
     <div className="flex items-start gap-2 text-xs">
       <span
-        className={`mt-0.5 flex-shrink-0 ${pass ? "text-green-500" : "text-amber-500"}`}
+        className={`mt-0.5 flex-shrink-0 font-mono text-[11px] leading-none ${pass ? "text-green-500" : "text-amber-500"}`}
       >
-        {pass ? "✓" : "○"}
+        {pass ? "[+]" : "[ ]"}
       </span>
       <div>
         <span className={pass ? "text-ink" : "text-muted"}>{label}</span>
@@ -82,7 +82,7 @@ export default function SeoPanel<T extends FieldValues>({
     {
       label: `Meta title length (${effectiveTitle.length} chars)`,
       pass: effectiveTitle.length >= 30 && effectiveTitle.length <= 60,
-      tip: "Keep between 30 and 60 characters — Google truncates longer titles.",
+      tip: "Keep between 30 and 60 characters - Google truncates longer titles.",
     },
     {
       label: "Meta description set",
@@ -139,7 +139,7 @@ export default function SeoPanel<T extends FieldValues>({
             {score}/{checks.length}
           </span>
         </div>
-        <span className="text-muted text-xs">{open ? "▲" : "▼"}</span>
+        <span className="text-muted text-xs font-mono">{open ? "[-]" : "[+]"}</span>
       </button>
 
       {open && (
@@ -160,7 +160,7 @@ export default function SeoPanel<T extends FieldValues>({
               {...register("metaTitle" as Path<T>)}
             />
             <p className="text-[10px] text-muted">
-              Shown as the clickable headline in Google. 30–60 chars ideal.
+              Shown as the clickable headline in Google. 30-60 chars ideal.
             </p>
           </div>
 
@@ -174,13 +174,13 @@ export default function SeoPanel<T extends FieldValues>({
             </div>
             <textarea
               rows={3}
-              placeholder="A concise summary shown under the title in search results…"
+              placeholder="A concise summary shown under the title in search results..."
               className="w-full rounded-lg border border-edge bg-subtle text-ink text-sm px-3 py-2
                 resize-none focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-muted transition"
               {...register("metaDescription" as Path<T>)}
             />
             <p className="text-[10px] text-muted">
-              120–160 chars. Appears under the title in Google results.
+              120-160 chars. Appears under the title in Google results.
             </p>
           </div>
 
@@ -208,7 +208,7 @@ export default function SeoPanel<T extends FieldValues>({
             </label>
             <input
               type="url"
-              placeholder="https://yourdomain.com/post/…  (leave blank for default)"
+              placeholder="https://yourdomain.com/post/...  (leave blank for default)"
               className="w-full rounded-lg border border-edge bg-subtle text-ink text-sm px-3 py-2
                 focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-muted transition"
               {...register("canonicalUrl" as Path<T>)}
@@ -247,7 +247,7 @@ export default function SeoPanel<T extends FieldValues>({
           {/* Score checklist */}
           <div className="rounded-lg bg-subtle border border-edge p-4 space-y-2.5">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">
-              SEO Score — {score}/{checks.length}
+              SEO Score - {score}/{checks.length}
             </p>
             {checks.map((c, i) => (
               <ScoreRow key={i} label={c.label} pass={c.pass} tip={c.tip} />

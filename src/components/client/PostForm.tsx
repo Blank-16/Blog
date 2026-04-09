@@ -10,8 +10,9 @@ import appwriteService, {
   buildUrlParam,
 } from "@/lib/appwrite/appwriteService";
 import { compressImage } from "@/lib/compressImage";
+import { extractEmbeddedFileIds, toastStyle } from "@/lib/utils";
 import { revalidatePost } from "@/app/actions/revalidatePost";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -110,7 +111,7 @@ export default function PostForm({ post }: PostFormProps) {
       if (draft.content) setValue("content", draft.content);
       if (draft.tags) setValue("tags", draft.tags);
     } catch {
-      // ignore malformed drafts
+      // Ignore malformed drafts
     }
   }, [post, setValue]);
 
@@ -131,7 +132,7 @@ export default function PostForm({ post }: PostFormProps) {
             }),
           );
         } catch {
-          // ignore storage errors
+          // Ignore storage quota errors
         }
       }, 1000);
     });
@@ -158,18 +159,18 @@ export default function PostForm({ post }: PostFormProps) {
           .filter(Boolean)
       : [];
 
-    const toastId = toast.loading(post ? "Updating post…" : "Publishing post…");
+    const toastId = toast.loading(post ? "Updating post..." : "Publishing post...");
 
     try {
       if (post) {
+        /* Update flow */
         let newFileId = post.featuredImage;
+
         if (data.image[0]) {
           const toUpload = compressedFile ?? data.image[0];
           const file = await appwriteService.uploadFile(toUpload, userData.$id);
           if (!file) {
-            toast.error("Image upload failed. Please try again.", {
-              id: toastId,
-            });
+            toast.error("Image upload failed. Please try again.", { id: toastId });
             setSubmitting(false);
             return;
           }
@@ -192,31 +193,37 @@ export default function PostForm({ post }: PostFormProps) {
         });
 
         if (!dbPost) {
-          toast.error("Failed to update post. Please try again.", {
-            id: toastId,
-          });
+          toast.error("Failed to update post. Please try again.", { id: toastId });
           setSubmitting(false);
           return;
         }
 
+        // Clean up the old featured image if it was replaced
         if (data.image[0] && newFileId !== post.featuredImage) {
           await appwriteService.deleteFile(post.featuredImage);
+        }
+
+        // Detect which embedded content images were removed during editing
+        // and delete them from storage so we don't accumulate orphans.
+        const oldEmbeddedIds = extractEmbeddedFileIds(post.content);
+        const newEmbeddedIds = new Set(extractEmbeddedFileIds(data.content));
+        const removedIds = oldEmbeddedIds.filter((id) => !newEmbeddedIds.has(id));
+        if (removedIds.length > 0) {
+          await appwriteService.deleteFiles(removedIds);
         }
 
         const urlParam = dbPost.urlSlug ?? dbPost.$id;
         toast.success("Post updated!", { id: toastId });
         revalidatePost(urlParam).catch(() => {});
+        setSubmitting(false);
         router.push(`/post/${urlParam}`);
       } else {
+        /* Create flow */
         const toUpload = compressedFile ?? data.image[0];
         const file = await appwriteService.uploadFile(toUpload, userData.$id);
         if (!file) {
-          toast.error("Image upload failed. Please try again.", {
-            id: toastId,
-          });
-          setError("image", {
-            message: "Image upload failed. Please try again.",
-          });
+          toast.error("Image upload failed. Please try again.", { id: toastId });
+          setError("image", { message: "Image upload failed. Please try again." });
           setSubmitting(false);
           return;
         }
@@ -237,16 +244,17 @@ export default function PostForm({ post }: PostFormProps) {
         });
 
         if (!dbPost) {
-          toast.error("Failed to create post. Please try again.", {
-            id: toastId,
-          });
+          toast.error("Failed to create post. Please try again.", { id: toastId });
           setSubmitting(false);
           return;
         }
 
         const urlParam = buildUrlParam(userData.name, data.title, dbPost.$id);
 
-        appwriteService
+        // Write urlSlug back to the document - await so we don't navigate
+        // before the slug is persisted. If this fails, the post is still
+        // accessible via raw $id (graceful degradation).
+        await appwriteService
           .updatePost({
             slug: dbPost.$id,
             title: dbPost.title,
@@ -260,12 +268,14 @@ export default function PostForm({ post }: PostFormProps) {
         try {
           localStorage.removeItem(DRAFT_KEY);
         } catch {
-          /* ignore */
+          // Ignore
         }
+
         setCompressedFile(null);
         setCompressionInfo(null);
         toast.success("Post published!", { id: toastId });
         revalidatePost(urlParam).catch(() => {});
+        setSubmitting(false);
         router.push(`/post/${urlParam}`);
       }
     } catch {
@@ -276,9 +286,7 @@ export default function PostForm({ post }: PostFormProps) {
 
   const onInvalid = (formErrors: FieldErrors<PostFormValues>) => {
     const missingFields = Object.keys(formErrors)
-      .filter(
-        (key): key is keyof PostFormValues => key in REQUIRED_FIELD_LABELS,
-      )
+      .filter((key): key is keyof PostFormValues => key in REQUIRED_FIELD_LABELS)
       .map((key) => REQUIRED_FIELD_LABELS[key])
       .filter((label): label is string => Boolean(label));
 
@@ -287,9 +295,7 @@ export default function PostForm({ post }: PostFormProps) {
       return;
     }
 
-    const formattedFields = missingFields
-      .map((field) => `• ${field}`)
-      .join("\n");
+    const formattedFields = missingFields.map((field) => `- ${field}`).join("\n");
     toast.error(`Please fill the following:\n${formattedFields}`);
   };
 
@@ -304,9 +310,7 @@ export default function PostForm({ post }: PostFormProps) {
   useEffect(() => {
     const sub = watch((value, { name }) => {
       if (name === "title") {
-        setValue("slug", slugTransform(value.title ?? ""), {
-          shouldValidate: true,
-        });
+        setValue("slug", slugTransform(value.title ?? ""), { shouldValidate: true });
       }
     });
     return () => sub.unsubscribe();
@@ -325,7 +329,6 @@ export default function PostForm({ post }: PostFormProps) {
       return;
     }
 
-    // Show a preview of the original immediately
     const url = URL.createObjectURL(file);
     setLocalPreview(url);
     setCompressionInfo(null);
@@ -336,7 +339,6 @@ export default function PostForm({ post }: PostFormProps) {
       setCompressedFile(compressed);
       if (compressed !== file) {
         setCompressionInfo({ before: file.size, after: compressed.size });
-        // Update preview to compressed version
         URL.revokeObjectURL(url);
         setLocalPreview(URL.createObjectURL(compressed));
       }
@@ -345,7 +347,7 @@ export default function PostForm({ post }: PostFormProps) {
     }
   };
 
-  // Clean up blob URL on unmount
+  // Revoke object URL on unmount to avoid memory leaks
   useEffect(() => {
     return () => {
       if (localPreview) URL.revokeObjectURL(localPreview);
@@ -354,22 +356,23 @@ export default function PostForm({ post }: PostFormProps) {
 
   return (
     <div className="w-full max-w-5xl mx-auto gsap-fade-up">
+      <Toaster position="top-right" toastOptions={{ style: toastStyle }} />
+
       <form onSubmit={handleSubmit(submit, onInvalid)}>
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* ── Left: content ── */}
+          {/* Content column */}
           <div className="flex-1 space-y-5">
             <div>
               <Input
                 label="Title"
-                placeholder="Your post title…"
+                placeholder="Your post title..."
                 {...register("title", { required: "Title is required" })}
               />
               {errors.title && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors.title.message}
-                </p>
+                <p className="mt-1 text-xs text-red-500">{errors.title.message}</p>
               )}
             </div>
+
             <div>
               <Input
                 label="Slug"
@@ -384,35 +387,46 @@ export default function PostForm({ post }: PostFormProps) {
                 }
               />
               {errors.slug && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors.slug.message}
-                </p>
+                <p className="mt-1 text-xs text-red-500">{errors.slug.message}</p>
               )}
             </div>
+
             <RTE
               label="Content"
               name="content"
               control={control}
               defaultValue={getValues("content")}
+              userId={userData?.$id}
               rules={{
                 required: "Content is required",
                 validate: (value) => {
-                  const content = typeof value === "string" ? value : "";
-                  return (
-                    content.replace(/<[^>]*>/g, "").trim().length > 0 ||
-                    "Content is required"
-                  );
+                  const raw = typeof value === "string" ? value : "";
+                  if (!raw.trim()) return "Content is required";
+                  // Tiptap stores JSON - extract text nodes to check for real content
+                  if (raw.trimStart().startsWith("{")) {
+                    try {
+                      const doc = JSON.parse(raw);
+                      const hasText = (nodes: { type?: string; text?: string; content?: unknown[] }[]): boolean =>
+                        nodes.some((n) => (n.type === "text" && !!n.text?.trim()) ||
+                          (n.content ? hasText(n.content as typeof nodes) : false));
+                      if (doc?.type === "doc" && Array.isArray(doc.content)) {
+                        return hasText(doc.content) || "Content is required";
+                      }
+                    } catch {
+                      // Not valid JSON - fall through to length check
+                    }
+                  }
+                  // Legacy HTML content
+                  return raw.replace(/<[^>]*>/g, "").trim().length > 0 || "Content is required";
                 },
               }}
             />
             {errors.content && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.content.message}
-              </p>
+              <p className="mt-1 text-xs text-red-500">{errors.content.message}</p>
             )}
           </div>
 
-          {/* ── Right: sidebar ── */}
+          {/* Sidebar */}
           <div className="lg:w-72 shrink-0 rounded-xl p-5 space-y-5 self-start sticky top-20 border bg-card border-edge">
             <h3 className="text-xs font-medium tracking-widest uppercase text-muted">
               Publish Settings
@@ -432,35 +446,31 @@ export default function PostForm({ post }: PostFormProps) {
                 }}
               />
               {errors.image && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors.image.message}
-                </p>
+                <p className="mt-1 text-xs text-red-500">{errors.image.message}</p>
               )}
             </div>
 
-            {/* Show new selection first, fall back to existing image */}
             {(localPreview || imagePreviewUrl) && (
               <div className="rounded-lg overflow-hidden border border-edge bg-subtle">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={localPreview ?? imagePreviewUrl!.toString()}
+                  src={localPreview ?? imagePreviewUrl!}
                   alt="Featured image preview"
                   className="w-full object-cover"
                 />
                 {compressing && (
                   <p className="text-[10px] text-center text-muted py-1.5 border-t border-edge">
-                    Compressing…
+                    Compressing...
                   </p>
                 )}
                 {!compressing && compressionInfo && (
                   <p className="text-[10px] text-center text-green-600 dark:text-green-400 py-1.5 border-t border-edge">
-                    Compressed {formatBytes(compressionInfo.before)} →{" "}
+                    Compressed {formatBytes(compressionInfo.before)} to{" "}
                     {formatBytes(compressionInfo.after)}{" "}
                     <span className="font-medium">
                       (
                       {Math.round(
-                        (1 - compressionInfo.after / compressionInfo.before) *
-                          100,
+                        (1 - compressionInfo.after / compressionInfo.before) * 100,
                       )}
                       % smaller)
                     </span>
@@ -481,18 +491,13 @@ export default function PostForm({ post }: PostFormProps) {
                 {...register("tags", {
                   required: "At least one tag is required",
                   validate: (value) =>
-                    value
-                      .split(",")
-                      .map((tag) => tag.trim())
-                      .filter(Boolean).length > 0 ||
+                    value.split(",").map((tag) => tag.trim()).filter(Boolean).length > 0 ||
                     "At least one tag is required",
                 })}
               />
               <p className="mt-1 text-xs text-muted">Comma-separated</p>
               {errors.tags && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors.tags.message}
-                </p>
+                <p className="mt-1 text-xs text-red-500">{errors.tags.message}</p>
               )}
             </div>
 
@@ -502,15 +507,11 @@ export default function PostForm({ post }: PostFormProps) {
               {...register("status", { required: "Status is required" })}
             />
             {errors.status && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.status.message}
-              </p>
+              <p className="mt-1 text-xs text-red-500">{errors.status.message}</p>
             )}
 
             {!post && (
-              <p className="text-xs text-muted italic">
-                Draft auto-saves as you type.
-              </p>
+              <p className="text-xs text-muted italic">Draft auto-saves as you type.</p>
             )}
 
             <Button
@@ -519,9 +520,9 @@ export default function PostForm({ post }: PostFormProps) {
               disabled={submitting || compressing}
             >
               {submitting
-                ? "Saving…"
+                ? "Saving..."
                 : compressing
-                  ? "Processing image…"
+                  ? "Processing image..."
                   : post
                     ? "Update Post"
                     : "Publish Post"}

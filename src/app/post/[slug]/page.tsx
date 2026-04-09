@@ -2,41 +2,10 @@ import type { Metadata } from "next";
 import { Query } from "appwrite";
 import appwriteService from "@/lib/appwrite/appwriteService";
 import PostPage from "@/page-components/PostPage";
+import { extractPreview } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-}
-
-function extractDescription(raw: string): string {
-  if (!raw) return "";
-  // Tiptap JSON
-  if (raw.trimStart().startsWith("{")) {
-    try {
-      const doc = JSON.parse(raw);
-      if (doc?.type === "doc" && Array.isArray(doc.content)) {
-        const texts: string[] = [];
-        function walk(
-          nodes: { type?: string; text?: string; content?: unknown[] }[],
-        ) {
-          for (const n of nodes) {
-            if (n.type === "text" && n.text) texts.push(n.text);
-            if (n.content) walk(n.content as typeof nodes);
-          }
-        }
-        walk(doc.content);
-        const plain = texts.join(" ").replace(/\s+/g, " ").trim();
-        return plain.slice(0, 160);
-      }
-    } catch {
-      /* fall through */
-    }
-  }
-  // Legacy HTML
-  const plain = raw
-    .replace(/<[^>]*>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  return plain.slice(0, 160);
 }
 
 // Hybrid approach:
@@ -54,7 +23,7 @@ export async function generateStaticParams() {
   }));
 }
 
-export const dynamicParams = true; // new slugs → SSR on first visit, then cached
+export const dynamicParams = true; // new slugs: SSR on first visit, then cached
 export const revalidate = 86400; // rebuild cached pages once every 24 hours
 
 export async function generateMetadata({
@@ -69,10 +38,10 @@ export async function generateMetadata({
     ? `${post.metaTitle} – Blogging Web`
     : `${post.title} – Blogging Web`;
 
-  const description = post.metaDescription || extractDescription(post.content);
+  const description = post.metaDescription || extractPreview(post.content, 160);
 
   const imageUrl = post.featuredImage
-    ? appwriteService.getFilePreview(post.featuredImage)?.toString()
+    ? appwriteService.getFilePreview(post.featuredImage)
     : undefined;
 
   const defaultUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/post/${slug}`;
@@ -110,14 +79,14 @@ export default async function Page({ params }: PageProps) {
   const { slug } = await params;
   const post = await appwriteService.getPostByUrlParam(slug);
 
-  // JSON-LD structured data — enables Google rich results
+  // JSON-LD structured data - enables Google rich results
   // (author, date, image shown directly in search results)
   const jsonLd = post
     ? {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
         headline: post.metaTitle || post.title,
-        description: post.metaDescription || extractDescription(post.content),
+        description: post.metaDescription || extractPreview(post.content, 160),
         datePublished: post.$createdAt,
         dateModified: post.$updatedAt,
         author: {
@@ -125,7 +94,7 @@ export default async function Page({ params }: PageProps) {
           name: post.authorName ?? "Unknown",
         },
         ...(post.featuredImage && {
-          image: appwriteService.getFilePreview(post.featuredImage)?.toString(),
+          image: appwriteService.getFilePreview(post.featuredImage),
         }),
         keywords:
           [

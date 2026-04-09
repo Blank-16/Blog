@@ -4,13 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
-
-function formatDate(iso?: string): string {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  });
-}
+import { formatDate } from '@/lib/utils';
 
 function ResultSkeleton() {
   return (
@@ -32,9 +26,13 @@ export default function SearchPage() {
   const [searched, setSearched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cancellation flag so async results that arrive after a query change
+  // or component unmount do not update stale state.
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     inputRef.current?.focus();
+    return () => { cancelledRef.current = true; };
   }, []);
 
   useEffect(() => {
@@ -50,10 +48,18 @@ export default function SearchPage() {
     setLoading(true);
 
     debounceRef.current = setTimeout(async () => {
-      const posts = await appwriteService.searchPosts(query);
-      setResults(posts);
-      setSearched(true);
-      setLoading(false);
+      try {
+        const posts = await appwriteService.searchPosts(query);
+        if (cancelledRef.current) return;
+        setResults(posts);
+        setSearched(true);
+      } catch {
+        if (cancelledRef.current) return;
+        setResults([]);
+        setSearched(true);
+      } finally {
+        if (!cancelledRef.current) setLoading(false);
+      }
     }, 400);
 
     return () => {
@@ -80,7 +86,7 @@ export default function SearchPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by title…"
+            placeholder="Search by title..."
             className="w-full rounded-xl border border-edge bg-card text-ink text-base
               pl-11 pr-4 py-3 focus:outline-none focus:ring-1 focus:ring-accent
               placeholder:text-muted transition"
@@ -91,7 +97,7 @@ export default function SearchPage() {
               className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-ink transition"
               aria-label="Clear search"
             >
-              ✕
+              &times;
             </button>
           )}
         </div>
@@ -132,7 +138,7 @@ export default function SearchPage() {
                     </h2>
                     <div className="flex items-center gap-2 text-xs text-muted">
                       {post.authorName && <span>{post.authorName}</span>}
-                      {post.authorName && post.$createdAt && <span className="opacity-40">·</span>}
+                      {post.authorName && post.$createdAt && <span className="opacity-40">&middot;</span>}
                       {post.$createdAt && <span>{formatDate(post.$createdAt)}</span>}
                     </div>
                     {post.tags && post.tags.length > 0 && (

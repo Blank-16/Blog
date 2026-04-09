@@ -20,10 +20,14 @@ interface SignupFormValues {
 export default function SignupForm() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { register, handleSubmit } = useForm<SignupFormValues>();
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<SignupFormValues>();
   const [error, setError] = useState<string>('');
 
-  const signup: SubmitHandler<SignupFormValues> = async (data) => {
+  const onSubmit: SubmitHandler<SignupFormValues> = async (data) => {
     setError('');
     try {
       await authService.createAccount(data);
@@ -33,7 +37,7 @@ export default function SignupForm() {
         router.push('/');
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      setError(err instanceof Error ? err.message : 'Signup failed. Please try again.');
     }
   };
 
@@ -61,21 +65,40 @@ export default function SignupForm() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit(signup)} className="space-y-4">
-          <Input label="Full Name" placeholder="Your name" {...register('name', { required: true })} />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
-            label="Email" placeholder="you@example.com" type="email"
+            label="Full Name"
+            placeholder="Your name"
+            autoComplete="name"
+            {...register('name', { required: true })}
+          />
+          <Input
+            label="Email"
+            placeholder="you@example.com"
+            type="email"
+            autoComplete="email"
             {...register('email', {
               required: true,
               validate: {
-                matchPattern: (v) =>
+                validFormat: (v) =>
                   /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) ||
                   'Please enter a valid email address',
               },
             })}
           />
-          <Input label="Password" type="password" placeholder="••••••••" {...register('password', { required: true })} />
-          <Button type="submit" className="w-full mt-2">Create Account</Button>
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Choose a password"
+            autoComplete="new-password"
+            {...register('password', {
+              required: true,
+              minLength: { value: 8, message: 'Password must be at least 8 characters' },
+            })}
+          />
+          <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating account...' : 'Create Account'}
+          </Button>
         </form>
       </div>
     </div>

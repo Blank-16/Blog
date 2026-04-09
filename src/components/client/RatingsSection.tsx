@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import appwriteService from '@/lib/appwrite/appwriteService';
-import { Post } from '@/lib/appwrite/appwriteService';
+import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
 
 interface RatingsSectionProps {
   post: Post;
@@ -16,40 +15,16 @@ function parseReview(raw: string): { author: string; body: string } {
   return { author: raw.slice(0, sep) || 'Anonymous', body: raw.slice(sep + 3) };
 }
 
-function formatReviewDate(): string {
-  return new Date().toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  });
-}
-
-function StarIcon({ filled, half }: { filled: boolean; half?: boolean }) {
+function StarIcon({ filled }: { filled: boolean }) {
   return (
     <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {half ? (
-        <>
-          <defs>
-            <linearGradient id="half-fill">
-              <stop offset="50%" stopColor="currentColor" />
-              <stop offset="50%" stopColor="transparent" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M10 1.5l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.77l-4.77 2.44.91-5.32L2.27 7.12l5.34-.78L10 1.5z"
-            fill="url(#half-fill)"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-        </>
-      ) : (
-        <path
-          d="M10 1.5l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.77l-4.77 2.44.91-5.32L2.27 7.12l5.34-.78L10 1.5z"
-          fill={filled ? 'currentColor' : 'none'}
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-      )}
+      <path
+        d="M10 1.5l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.77l-4.77 2.44.91-5.32L2.27 7.12l5.34-.78L10 1.5z"
+        fill={filled ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -91,14 +66,12 @@ function StarRating({
 function AverageStars({ ratings }: { ratings: number[] }) {
   if (!ratings.length) return null;
   const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-  const rounded = Math.round(avg * 2) / 2; // round to nearest 0.5
+  const rounded = Math.round(avg * 2) / 2;
 
   return (
     <div className="flex items-center gap-2">
       <StarRating value={rounded} readonly />
-      <span className="text-sm font-medium text-ink">
-        {avg.toFixed(1)}
-      </span>
+      <span className="text-sm font-medium text-ink">{avg.toFixed(1)}</span>
       <span className="text-xs text-muted">
         ({ratings.length} {ratings.length === 1 ? 'rating' : 'ratings'})
       </span>
@@ -114,14 +87,13 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
   const [ratings, setRatings] = useState<number[]>(post.ratings ?? []);
   const [reviews, setReviews] = useState<string[]>(post.reviews ?? []);
 
-  // Form state
   const [starValue, setStarValue] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!userData) return;
     if (starValue === 0) {
       setError('Please select a star rating.');
@@ -133,20 +105,23 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
     }
 
     setError(null);
+    setSubmitting(true);
 
-    startTransition(async () => {
-      // Store as "AuthorName|||Body"
+    try {
+      // Encode as "AuthorName|||Body"
       const encoded = `${userData.name}|||${reviewText.trim()}`;
 
-      // Update ratings
       const updatedWithRating = await appwriteService.addRating(post.$id, ratings, starValue);
       if (!updatedWithRating) {
         setError('Failed to save rating. Please try again.');
         return;
       }
 
-      // Update reviews
-      const updatedWithReview = await appwriteService.addReview(post.$id, updatedWithRating.reviews ?? reviews, encoded);
+      const updatedWithReview = await appwriteService.addReview(
+        post.$id,
+        updatedWithRating.reviews ?? reviews,
+        encoded,
+      );
       if (!updatedWithReview) {
         setError('Failed to save review. Please try again.');
         return;
@@ -158,24 +133,25 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
       setReviewText('');
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <section className="mt-16 pt-10 border-t border-edge space-y-10">
-
-      {/* ── Header + average ── */}
+      {/* Header + average */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl text-ink mb-1">Ratings & Reviews</h2>
+          <h2 className="font-display text-2xl text-ink mb-1">Ratings &amp; Reviews</h2>
           {ratings.length > 0
             ? <AverageStars ratings={ratings} />
-            : <p className="text-sm text-muted">No ratings yet — be the first!</p>
+            : <p className="text-sm text-muted">No ratings yet - be the first!</p>
           }
         </div>
       </div>
 
-      {/* ── Submit form ── */}
+      {/* Submit form */}
       {isLoggedIn && !isAuthor && (
         <div className="rounded-xl border border-edge p-6 space-y-4 bg-card">
           <p className="text-xs font-medium tracking-widest uppercase text-muted">Leave a review</p>
@@ -205,23 +181,23 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
 
           {success && (
             <p className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-lg px-3 py-2">
-              Review submitted — thanks!
+              Review submitted - thanks!
             </p>
           )}
 
           <button
             type="button"
-            disabled={isPending}
+            disabled={submitting}
             onClick={handleSubmit}
             className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-accent text-accent-fg text-sm font-medium transition hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPending ? (
+            {submitting ? (
               <>
                 <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
                 </svg>
-                Submitting…
+                Submitting...
               </>
             ) : 'Submit Review'}
           </button>
@@ -230,7 +206,8 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
 
       {!isLoggedIn && (
         <p className="text-sm text-muted border border-edge rounded-xl px-5 py-4">
-          <a href="/login" className="underline underline-offset-2 text-ink hover:opacity-60 transition">Sign in</a> to leave a rating and review.
+          <a href="/login" className="underline underline-offset-2 text-ink hover:opacity-60 transition">Sign in</a>{' '}
+          to leave a rating and review.
         </p>
       )}
 
@@ -240,7 +217,7 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
         </p>
       )}
 
-      {/* ── Review list ── */}
+      {/* Review list */}
       {reviews.length > 0 && (
         <div className="space-y-5">
           <p className="text-xs font-medium tracking-widest uppercase text-muted">
@@ -248,22 +225,18 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
           </p>
           {[...reviews].reverse().map((raw, i) => {
             const { author, body } = parseReview(raw);
+            // Map reversed display index back to original index for the paired rating
             const reviewIndex = reviews.length - 1 - i;
             const reviewRating = ratings[reviewIndex] ?? null;
             return (
               <div key={i} className="flex gap-4 pb-5 border-b border-edge last:border-0">
-                {/* Avatar */}
                 <div className="flex-shrink-0 w-9 h-9 rounded-full bg-subtle border border-edge flex items-center justify-center text-xs font-medium text-muted uppercase">
                   {author.charAt(0)}
                 </div>
-
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-ink">{author}</span>
-                    {reviewRating !== null && (
-                      <StarRating value={reviewRating} readonly />
-                    )}
-                    <span className="text-[11px] text-muted ml-auto">{formatReviewDate()}</span>
+                    {reviewRating !== null && <StarRating value={reviewRating} readonly />}
                   </div>
                   <p className="text-sm text-muted leading-relaxed">{body}</p>
                 </div>

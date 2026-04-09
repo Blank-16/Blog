@@ -7,12 +7,23 @@ export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const saved = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = saved ? saved === 'dark' : prefersDark;
+    const isDark = saved ? saved === 'dark' : mediaQuery.matches;
+
     setDark(isDark);
     setMounted(true);
     document.documentElement.classList.toggle('dark', isDark);
+
+    // Sync with OS preference changes only when the user has not pinned a choice
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (localStorage.getItem('theme')) return; // user has an explicit preference
+      setDark(e.matches);
+      document.documentElement.classList.toggle('dark', e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   const toggle = () => {
@@ -27,7 +38,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      aria-label="Toggle theme"
+      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
       className="w-8 h-8 flex items-center justify-center rounded-full text-muted transition-opacity hover:opacity-50"
     >
       {dark ? (

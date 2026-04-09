@@ -8,7 +8,7 @@ export default function Footer() {
           <a
             href="https://github.com/Blank-16"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="transition-opacity hover:opacity-50"
           >
             @Blank-16
