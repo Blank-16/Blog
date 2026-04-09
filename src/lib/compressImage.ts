@@ -6,11 +6,11 @@
  * - If the compressed output is larger than the original, the original
  *   is returned unchanged.
  *
- * No external libraries — pure browser Canvas API.
+ * No external libraries - pure browser Canvas API.
  */
 export interface CompressOptions {
   maxDimension?: number; // default 1280
-  quality?: number;      // 0–1, default 0.82
+  quality?: number;      // 0-1, default 0.82
 }
 
 export async function compressImage(
@@ -19,7 +19,7 @@ export async function compressImage(
 ): Promise<File> {
   const { maxDimension = 1280, quality = 0.82 } = options;
 
-  // Skip GIFs — canvas strips animation
+  // Skip GIFs - canvas strips animation
   if (file.type === 'image/gif') return file;
 
   return new Promise((resolve) => {

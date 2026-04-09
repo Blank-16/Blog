@@ -12,7 +12,7 @@ export default function NotFound() {
         href="/"
         className="text-sm underline underline-offset-4 text-ink transition-opacity hover:opacity-50"
       >
-        ← Back to home
+        &larr; Back to home
       </Link>
     </div>
   );

@@ -1,11 +1,9 @@
-import { ID, Query, Models } from "appwrite";
-import { getDatabases } from "./client";
-import config from "./config";
-import { Post, CreatePostParams, UpdatePostParams } from "./types";
+import { ID, Query, Models } from 'appwrite';
+import { getDatabases } from './client';
+import config from './config';
+import { Post, CreatePostParams, UpdatePostParams } from './types';
 
-export async function createPost(
-  params: CreatePostParams,
-): Promise<Post | null> {
+export async function createPost(params: CreatePostParams): Promise<Post | null> {
   try {
     return await getDatabases().createDocument<Post>(
       config.appwriteDatabaseId,
@@ -14,7 +12,7 @@ export async function createPost(
       params,
     );
   } catch (error) {
-    console.error("postService :: createPost :: error", error);
+    console.error('postService :: createPost :: error', error);
     return null;
   }
 }
@@ -45,8 +43,7 @@ export async function updatePost({
     if (tags !== undefined) updateData.tags = tags;
     if (urlSlug !== undefined) updateData.urlSlug = urlSlug;
     if (metaTitle !== undefined) updateData.metaTitle = metaTitle;
-    if (metaDescription !== undefined)
-      updateData.metaDescription = metaDescription;
+    if (metaDescription !== undefined) updateData.metaDescription = metaDescription;
     if (focusKeyword !== undefined) updateData.focusKeyword = focusKeyword;
     if (canonicalUrl !== undefined) updateData.canonicalUrl = canonicalUrl;
     if (noIndex !== undefined) updateData.noIndex = noIndex;
@@ -58,7 +55,7 @@ export async function updatePost({
       updateData,
     );
   } catch (error) {
-    console.error("postService :: updatePost :: error", error);
+    console.error('postService :: updatePost :: error', error);
     return null;
   }
 }
@@ -72,7 +69,7 @@ export async function deletePost(slug: string): Promise<boolean> {
     );
     return true;
   } catch (error) {
-    console.error("postService :: deletePost :: error", error);
+    console.error('postService :: deletePost :: error', error);
     return false;
   }
 }
@@ -85,7 +82,7 @@ export async function getPost(slug: string): Promise<Post | null> {
       slug,
     );
   } catch (error) {
-    console.error("postService :: getPost :: error", error);
+    console.error('postService :: getPost :: error', error);
     return null;
   }
 }
@@ -95,16 +92,14 @@ export async function getPost(slug: string): Promise<Post | null> {
  * Extracts the real $id from after the "--" separator, falls back to
  * treating the whole string as a raw $id for old posts without a urlSlug.
  */
-export async function getPostByUrlParam(
-  urlParam: string,
-): Promise<Post | null> {
-  const sep = urlParam.lastIndexOf("--");
+export async function getPostByUrlParam(urlParam: string): Promise<Post | null> {
+  const sep = urlParam.lastIndexOf('--');
   const realId = sep !== -1 ? urlParam.slice(sep + 2) : urlParam;
   return getPost(realId);
 }
 
 export async function getPosts(
-  queries: string[] = [Query.equal("status", "active")],
+  queries: string[] = [Query.equal('status', 'active')],
 ): Promise<Models.DocumentList<Post> | null> {
   try {
     return await getDatabases().listDocuments<Post>(
@@ -113,7 +108,7 @@ export async function getPosts(
       queries,
     );
   } catch (error) {
-    console.error("postService :: getPosts :: error", error);
+    console.error('postService :: getPosts :: error', error);
     return null;
   }
 }
@@ -125,8 +120,8 @@ export async function searchPosts(query: string): Promise<Post[]> {
       config.appwriteDatabaseId,
       config.appwriteCollectionId,
       [
-        Query.equal("status", "active"),
-        Query.contains("title", query.trim()),
+        Query.equal('status', 'active'),
+        Query.contains('title', query.trim()),
         Query.limit(20),
       ],
     );
@@ -149,7 +144,7 @@ export async function addRating(
       { ratings: [...existingRatings, rating] },
     );
   } catch (error) {
-    console.error("postService :: addRating :: error", error);
+    console.error('postService :: addRating :: error', error);
     return null;
   }
 }
@@ -167,7 +162,7 @@ export async function addReview(
       { reviews: [...existingReviews, review] },
     );
   } catch (error) {
-    console.error("postService :: addReview :: error", error);
+    console.error('postService :: addReview :: error', error);
     return null;
   }
 }

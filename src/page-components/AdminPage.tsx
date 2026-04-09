@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import { useAppSelector } from "@/store/hooks";
 import appwriteService, { Admin, Post } from "@/lib/appwrite/appwriteService";
 import { DAILY_LIMIT, WEEKLY_LIMIT } from "@/lib/usePostLimits";
 import DashboardCharts from "@/components/client/DashboardCharts";
+import { formatDate, toastStyle } from "@/lib/utils";
 
 // Types
 type Tab = "overview" | "posts" | "admins";
@@ -25,17 +26,8 @@ interface Stats {
   topAuthor: { name: string; count: number } | null;
 }
 
-// Helpers
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function avgRating(ratings?: number[]): string {
-  if (!ratings?.length) return "—";
+  if (!ratings?.length) return "-";
   return (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1);
 }
 
@@ -170,13 +162,13 @@ function OverviewTab({ stats, posts }: { stats: Stats; posts: Post[] }) {
             >
               <div className="flex-1 min-w-0">
                 <Link
-                  href={`/post/${post.$id}`}
+                  href={`/post/${post.urlSlug ?? post.$id}`}
                   className="text-sm font-medium text-ink hover:opacity-60 transition-opacity truncate block"
                 >
                   {post.title}
                 </Link>
                 <p className="text-[11px] text-muted mt-0.5">
-                  {post.authorName ?? "Unknown"} · {formatDate(post.$createdAt)}
+                  {post.authorName ?? "Unknown"} &middot; {formatDate(post.$createdAt)}
                 </p>
               </div>
               <span
@@ -190,7 +182,7 @@ function OverviewTab({ stats, posts }: { stats: Stats; posts: Post[] }) {
                 {post.status}
               </span>
               <span className="text-xs text-muted">
-                ★ {avgRating(post.ratings)}
+                avg {avgRating(post.ratings)}
               </span>
             </div>
           ))}
@@ -216,7 +208,7 @@ function PostsTab({
 }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
-  const [isPending, startTrans] = useTransition();
+  const [deleting, setDeleting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = posts.filter((p) => {
@@ -227,10 +219,11 @@ function PostsTab({
     return matchSearch && matchFilter;
   });
 
-  const handleDelete = (post: Post) => {
+  const handleDelete = async (post: Post) => {
     if (!confirm(`Delete "${post.title}"? This cannot be undone.`)) return;
     setDeletingId(post.$id);
-    startTrans(async () => {
+    setDeleting(true);
+    try {
       const ok = await appwriteService.adminDeletePost(post.$id);
       if (ok) {
         onDelete(post.$id);
@@ -238,8 +231,10 @@ function PostsTab({
       } else {
         toast.error("Failed to delete post.");
       }
+    } finally {
       setDeletingId(null);
-    });
+      setDeleting(false);
+    }
   };
 
   return (
@@ -250,7 +245,7 @@ function PostsTab({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by title or author…"
+          placeholder="Search by title or author..."
           className="flex-1 min-w-48 rounded-lg border border-edge bg-subtle text-ink text-sm
             px-4 py-2 focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-muted transition"
         />
@@ -283,20 +278,20 @@ function PostsTab({
             >
               <div className="flex-1 min-w-0 space-y-0.5">
                 <Link
-                  href={`/post/${post.$id}`}
+                  href={`/post/${post.urlSlug ?? post.$id}`}
                   className="text-sm font-medium text-ink hover:opacity-60 transition-opacity truncate block"
                 >
                   {post.title}
                 </Link>
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
                   <span>{post.authorName ?? "Unknown"}</span>
-                  <span className="opacity-40">·</span>
+                  <span className="opacity-40">&middot;</span>
                   <span>{formatDate(post.$createdAt)}</span>
-                  <span className="opacity-40">·</span>
+                  <span className="opacity-40">&middot;</span>
                   <span>
-                    ★ {avgRating(post.ratings)} ({post.ratings?.length ?? 0})
+                    avg {avgRating(post.ratings)} ({post.ratings?.length ?? 0})
                   </span>
-                  <span className="opacity-40">·</span>
+                  <span className="opacity-40">&middot;</span>
                   <span>{post.reviews?.length ?? 0} reviews</span>
                 </div>
               </div>
@@ -321,11 +316,11 @@ function PostsTab({
                 </Link>
                 <button
                   onClick={() => handleDelete(post)}
-                  disabled={isPending && deletingId === post.$id}
+                  disabled={deleting && deletingId === post.$id}
                   className="text-xs px-3 py-1 rounded-lg text-red-500 hover:bg-red-50
                   dark:hover:bg-red-950/30 transition-colors disabled:opacity-40"
                 >
-                  {isPending && deletingId === post.$id ? "…" : "Delete"}
+                  {deleting && deletingId === post.$id ? "..." : "Delete"}
                 </button>
               </div>
             </div>
@@ -370,7 +365,7 @@ function AdminsTab({
           <h2 className="font-display text-xl mb-1">Add Admin</h2>
           <p className="text-xs text-muted leading-relaxed">
             Paste the Appwrite user ID of the person you want to promote. You
-            can find user IDs in the Appwrite console under Auth → Users.
+            can find user IDs in the Appwrite console under Auth &gt; Users.
           </p>
         </div>
         <div className="flex gap-2">
@@ -378,7 +373,7 @@ function AdminsTab({
             type="text"
             value={newUserId}
             onChange={(e) => setNewUserId(e.target.value)}
-            placeholder="e.g. 6643f3a1b2c9d…"
+            placeholder="e.g. 6643f3a1b2c9d..."
             className="flex-1 rounded-lg border border-edge bg-subtle text-ink text-sm px-4 py-2.5
               focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-muted transition"
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -389,7 +384,7 @@ function AdminsTab({
             className="px-5 py-2.5 rounded-lg bg-accent text-accent-fg text-sm font-medium
               transition hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            {isPending ? "Adding…" : "Add Admin"}
+            {isPending ? "Adding..." : "Add Admin"}
           </button>
         </div>
       </section>
@@ -491,7 +486,7 @@ function AdminDashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [isPending, startTrans] = useTransition();
+  const [adminActionPending, setAdminActionPending] = useState(false);
 
   // Access check
   useEffect(() => {
@@ -552,9 +547,10 @@ function AdminDashboard() {
   }, [hasAccess, loadData]);
 
   // Admin actions
-  const handleAddAdmin = (userId: string) => {
+  const handleAddAdmin = async (userId: string) => {
     if (!userData) return;
-    startTrans(async () => {
+    setAdminActionPending(true);
+    try {
       const result = await appwriteService.addAdmin(userId, userData.$id);
       if (!result) {
         toast.error("Could not add admin. Already one, or invalid ID.");
@@ -563,15 +559,18 @@ function AdminDashboard() {
       setAdmins((prev) => [...prev, result]);
       setStats((s) => (s ? { ...s, totalAdmins: s.totalAdmins + 1 } : s));
       toast.success("Admin added.");
-    });
+    } finally {
+      setAdminActionPending(false);
+    }
   };
 
-  const handleRemoveAdmin = (admin: Admin) => {
+  const handleRemoveAdmin = async (admin: Admin) => {
     if (admin.userId === userData?.$id) {
       toast.error("Can't remove yourself.");
       return;
     }
-    startTrans(async () => {
+    setAdminActionPending(true);
+    try {
       const ok = await appwriteService.removeAdmin(admin.$id);
       if (!ok) {
         toast.error("Failed to remove admin.");
@@ -580,19 +579,31 @@ function AdminDashboard() {
       setAdmins((prev) => prev.filter((a) => a.$id !== admin.$id));
       setStats((s) => (s ? { ...s, totalAdmins: s.totalAdmins - 1 } : s));
       toast.success("Admin removed.");
-    });
+    } finally {
+      setAdminActionPending(false);
+    }
   };
 
   const handleDeletePost = (postId: string) => {
+    const deletedPost = posts.find((p) => p.$id === postId);
     setPosts((prev) => prev.filter((p) => p.$id !== postId));
-    setStats((s) => (s ? { ...s, totalPosts: s.totalPosts - 1 } : s));
+    setStats((s) => {
+      if (!s) return s;
+      const wasActive = deletedPost?.status === 'active';
+      return {
+        ...s,
+        totalPosts: s.totalPosts - 1,
+        activePosts: wasActive ? s.activePosts - 1 : s.activePosts,
+        inactivePosts: !wasActive ? s.inactivePosts - 1 : s.inactivePosts,
+      };
+    });
   };
 
   // Render
   if (checking)
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-muted text-sm">Verifying access…</p>
+        <p className="text-muted text-sm">Verifying access...</p>
       </div>
     );
   if (!hasAccess) return null;
@@ -614,7 +625,7 @@ function AdminDashboard() {
             className="text-xs px-4 py-2 rounded-full border border-edge text-muted
               hover:text-ink hover:bg-subtle transition disabled:opacity-40"
           >
-            {loading ? "Loading…" : "↻ Refresh"}
+            {loading ? "Loading..." : "Refresh"}
           </button>
         </div>
 
@@ -673,7 +684,7 @@ function AdminDashboard() {
                 currentUserId={userData.$id}
                 onAdd={handleAddAdmin}
                 onRemove={handleRemoveAdmin}
-                isPending={isPending}
+                isPending={adminActionPending}
               />
             )}
           </>
@@ -689,14 +700,7 @@ export default function AdminPage() {
     <AuthGuard authentication={true}>
       <Toaster
         position="top-right"
-        toastOptions={{
-          style: {
-            background: "var(--bg-card)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-            fontSize: "14px",
-          },
-        }}
+        toastOptions={{ style: toastStyle }}
       />
       <AdminDashboard />
     </AuthGuard>

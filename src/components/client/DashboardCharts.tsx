@@ -73,7 +73,7 @@ function CustomTooltip({
   );
 }
 
-// Posts per week — last 8 weeks
+// Posts per week - last 8 weeks
 function PostsPerWeekChart({ posts }: { posts: Post[] }) {
   const data = useMemo(() => {
     const now = new Date();
@@ -222,7 +222,7 @@ function TopTagsChart({ posts }: { posts: Post[] }) {
   );
 }
 
-// Ratings distribution 1–5
+// Ratings distribution 1-5
 function RatingsDistributionChart({ posts }: { posts: Post[] }) {
   const data = useMemo(() => {
     const counts = [0, 0, 0, 0, 0];
@@ -231,7 +231,7 @@ function RatingsDistributionChart({ posts }: { posts: Post[] }) {
         if (r >= 1 && r <= 5) counts[r - 1]++;
       }),
     );
-    return counts.map((count, i) => ({ star: `${i + 1}★`, count }));
+    return counts.map((count, i) => ({ star: `${i + 1}*`, count }));
   }, [posts]);
 
   const hasRatings = data.some((d) => d.count > 0);
@@ -282,7 +282,7 @@ function TopPostsChart({ posts }: { posts: Post[] }) {
     return posts
       .filter((p) => p.ratings && p.ratings.length > 0)
       .map((p) => ({
-        title: p.title.length > 28 ? p.title.slice(0, 28) + "…" : p.title,
+        title: p.title.length > 28 ? p.title.slice(0, 28) + "..." : p.title,
         avg: parseFloat(
           (p.ratings!.reduce((a, b) => a + b, 0) / p.ratings!.length).toFixed(
             1,

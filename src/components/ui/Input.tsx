@@ -24,7 +24,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {...props}
         className={`w-full px-3.5 py-2.5 text-sm rounded-lg outline-none border
           bg-subtle text-ink border-edge
-          focus:border-ink transition-colors duration-200 ${className}`}
+          focus:border-ink transition-colors duration-200
+          disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       />
     </div>
   );

@@ -5,13 +5,16 @@ import { generateHTML } from '@tiptap/html';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import type { JSONContent } from '@tiptap/react';
-import DOMPurify from 'isomorphic-dompurify';
+import DOMPurify from 'dompurify';
 
 interface PostContentProps {
   content: string;
 }
 
-/** Returns parsed Tiptap JSON only if the content is actually JSON — no warnings for HTML content */
+/**
+ * Parses raw content as Tiptap JSON only if it actually looks like JSON.
+ * Returns null silently for legacy HTML content - no console warnings.
+ */
 function parseToJSON(raw: string): JSONContent | null {
   if (!raw || !raw.trimStart().startsWith('{')) return null;
   try {
@@ -20,7 +23,7 @@ function parseToJSON(raw: string): JSONContent | null {
       return parsed as JSONContent;
     }
   } catch {
-    // Silently ignore — content is HTML, not JSON
+    // Not valid JSON - fall through
   }
   return null;
 }
@@ -36,11 +39,11 @@ function renderToHtml(content: string): string {
       ]);
       return DOMPurify.sanitize(generated);
     } catch {
-      // generateHTML failed — fall through to raw HTML render
+      // generateHTML failed - fall through to raw HTML
     }
   }
 
-  // Legacy HTML content (or JSON that failed to render) — sanitize and render as-is
+  // Legacy HTML or failed JSON - sanitize and render as-is
   return DOMPurify.sanitize(content);
 }
 

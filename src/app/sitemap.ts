@@ -8,7 +8,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const posts = result?.documents ?? [];
 
   const postUrls: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: `${SITE_URL}/post/${post.$id}`,
+    // Use the urlSlug-based URL if available, otherwise fall back to raw $id
+    url: `${SITE_URL}/post/${post.urlSlug ?? post.$id}`,
     lastModified: new Date(post.$updatedAt),
     changeFrequency: 'weekly',
     priority: 0.8,
