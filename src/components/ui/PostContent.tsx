@@ -5,7 +5,7 @@ import { generateHTML } from '@tiptap/html';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import type { JSONContent } from '@tiptap/react';
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface PostContentProps {
   content: string;
