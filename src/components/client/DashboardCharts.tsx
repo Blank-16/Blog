@@ -75,7 +75,9 @@ function CustomTooltip({
 
 // Posts per week - last 8 weeks
 function PostsPerWeekChart({ posts }: { posts: Post[] }) {
-  const data = useMemo(() => {
+  // Week boundaries only change weekly, not with the posts array.
+  // Compute them separately so they are not recalculated on every post update.
+  const weekBoundaries = useMemo(() => {
     const now = new Date();
     return Array.from({ length: 8 }, (_, i) => {
       const end = new Date(now);
@@ -84,17 +86,26 @@ function PostsPerWeekChart({ posts }: { posts: Post[] }) {
       const start = new Date(end);
       start.setUTCDate(end.getUTCDate() - 6);
       start.setUTCHours(0, 0, 0, 0);
-      const label = start.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+      return {
+        start,
+        end,
+        label: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      };
+    }).reverse();
+  // Empty dependency array - boundaries are computed once per mount.
+  // They are stable for the lifetime of the dashboard session.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const data = useMemo(() => {
+    return weekBoundaries.map(({ start, end, label }) => {
       const count = posts.filter((p) => {
         const d = new Date(p.$createdAt);
         return d >= start && d <= end;
       }).length;
       return { week: label, posts: count };
-    }).reverse();
-  }, [posts]);
+    });
+  }, [posts, weekBoundaries]);
 
   return (
     <ChartCard title="Posts per week (last 8 weeks)">

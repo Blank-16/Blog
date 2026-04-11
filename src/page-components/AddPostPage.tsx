@@ -44,13 +44,25 @@ function AddPostContent() {
             <div className="flex flex-col items-end gap-1 text-xs text-muted">
               <span>
                 Today:{" "}
-                <span className={todayCount >= DAILY_LIMIT ? "text-red-500 font-medium" : "text-ink font-medium"}>
+                <span
+                  className={
+                    todayCount >= DAILY_LIMIT
+                      ? "text-red-500 font-medium"
+                      : "text-ink font-medium"
+                  }
+                >
                   {todayCount} / {DAILY_LIMIT}
                 </span>
               </span>
               <span>
                 This week:{" "}
-                <span className={weekCount >= WEEKLY_LIMIT ? "text-red-500 font-medium" : "text-ink font-medium"}>
+                <span
+                  className={
+                    weekCount >= WEEKLY_LIMIT
+                      ? "text-red-500 font-medium"
+                      : "text-ink font-medium"
+                  }
+                >
                   {weekCount} / {WEEKLY_LIMIT}
                 </span>
               </span>
@@ -59,15 +71,27 @@ function AddPostContent() {
         </div>
 
         {canPost ? (
-          <PostForm />
+          <PostForm isAdmin={isAdmin} />
         ) : (
           <div className="max-w-md mx-auto text-center py-20 space-y-4">
-            <p className="text-5xl" role="img" aria-label="Stop">X</p>
+            <p className="text-5xl" role="img" aria-label="Stop">
+              X
+            </p>
             <h2 className="font-display text-2xl">You&apos;re all caught up</h2>
             <p className="text-muted text-sm leading-relaxed">{limitReason}</p>
             <div className="pt-2 text-xs text-muted border border-edge rounded-xl px-5 py-4 text-left space-y-1">
-              <p>Daily limit: <span className="text-ink font-medium">{DAILY_LIMIT} post / day</span></p>
-              <p>Weekly limit: <span className="text-ink font-medium">{WEEKLY_LIMIT} posts / week</span></p>
+              <p>
+                Daily limit:{" "}
+                <span className="text-ink font-medium">
+                  {DAILY_LIMIT} post / day
+                </span>
+              </p>
+              <p>
+                Weekly limit:{" "}
+                <span className="text-ink font-medium">
+                  {WEEKLY_LIMIT} posts / week
+                </span>
+              </p>
               <p className="pt-1 text-muted">Resets at midnight UTC.</p>
             </div>
           </div>

@@ -181,3 +181,37 @@ export async function adminDeletePost(postId: string): Promise<boolean> {
 
   return true;
 }
+
+/**
+ * Fetches ALL posts by walking through cursor pages until exhausted.
+ * Appwrite caps any single listDocuments call at 100 documents (hard limit
+ * of the free tier; Pro allows up to 5000 but cursor pagination is always safer).
+ * This replaces the hard-coded getAllPosts(200) call in AdminPage.
+ */
+export async function fetchAllPostsPaginated(): Promise<Post[]> {
+  const PAGE = 100;
+  const all: Post[] = [];
+  let cursor: string | undefined;
+
+  while (true) {
+    const queries = [
+      Query.orderDesc('$createdAt'),
+      Query.limit(PAGE),
+      ...(cursor ? [Query.cursorAfter(cursor)] : []),
+    ];
+    try {
+      const result = await getDatabases().listDocuments<Post>(
+        config.appwriteDatabaseId,
+        config.appwriteCollectionId,
+        queries,
+      );
+      all.push(...result.documents);
+      if (result.documents.length < PAGE) break;
+      cursor = result.documents[result.documents.length - 1].$id;
+    } catch {
+      break;
+    }
+  }
+
+  return all;
+}

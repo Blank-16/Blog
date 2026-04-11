@@ -1,10 +1,10 @@
-import { notFound } from 'next/navigation';
-import Image from 'next/image';
-import PostActions from '@/components/client/PostActions';
-import PostContent from '@/components/ui/PostContent';
-import RatingsSection from '@/components/client/RatingsSection';
-import appwriteService from '@/lib/appwrite/appwriteService';
-import { formatDate } from '@/lib/utils';
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import PostActions from "@/components/client/PostActions";
+import PostContent from "@/components/ui/PostContent";
+import RatingsSection from "@/components/client/RatingsSection";
+import appwriteService from "@/lib/appwrite/appwriteService";
+import { formatDate } from "@/lib/utils";
 
 export default async function PostPage({ slug }: { slug: string }) {
   const post = await appwriteService.getPostByUrlParam(slug);
@@ -20,7 +20,13 @@ export default async function PostPage({ slug }: { slug: string }) {
         {post.authorName && <span>{post.authorName}</span>}
         {post.authorName && <span className="opacity-30">&middot;</span>}
         {post.$createdAt && (
-          <span>{formatDate(post.$createdAt, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+          <span>
+            {formatDate(post.$createdAt, {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </span>
         )}
       </div>
 
@@ -31,7 +37,10 @@ export default async function PostPage({ slug }: { slug: string }) {
       {post.tags && post.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-8">
           {post.tags.map((tag) => (
-            <span key={tag} className="text-xs px-3 py-1 rounded-full border border-edge text-muted">
+            <span
+              key={tag}
+              className="text-xs px-3 py-1 rounded-full border border-edge text-muted"
+            >
               {tag}
             </span>
           ))}
