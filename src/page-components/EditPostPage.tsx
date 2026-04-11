@@ -7,6 +7,7 @@ import Container from "@/components/ui/Container";
 import PostForm from "@/components/client/PostForm";
 import appwriteService, { Post } from "@/lib/appwrite/appwriteService";
 import { useAppSelector } from "@/store/hooks";
+import { usePostLimits } from "@/lib/usePostLimits";
 
 function EditPostContent() {
   const [post, setPost] = useState<Post | null>(null);
@@ -15,6 +16,9 @@ function EditPostContent() {
   const router = useRouter();
   const authStatus = useAppSelector((state) => state.auth.status);
   const authLoading = useAppSelector((state) => state.auth.loading);
+  // usePostLimits already queries isAdmin - reuse that result rather than
+  // letting PostForm make its own duplicate Appwrite call.
+  const { isAdmin } = usePostLimits();
 
   // Extract to a stable string so the dependency array holds a primitive
   const slug = params?.slug ?? null;
@@ -22,7 +26,7 @@ function EditPostContent() {
   useEffect(() => {
     if (authLoading || !authStatus) return;
     if (!slug) {
-      router.replace('/');
+      router.replace("/");
       return;
     }
     let cancelled = false;
@@ -31,7 +35,9 @@ function EditPostContent() {
       if (result) setPost(result);
       else setNotFound(true);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [slug, router, authStatus, authLoading]);
 
   if (authLoading || (!post && !notFound)) {
@@ -61,7 +67,7 @@ function EditPostContent() {
           </p>
           <h1 className="text-4xl font-display">{post.title}</h1>
         </div>
-        <PostForm post={post} />
+        <PostForm post={post} isAdmin={isAdmin} />
       </Container>
     </div>
   );

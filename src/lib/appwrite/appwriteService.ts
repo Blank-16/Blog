@@ -32,6 +32,7 @@ export {
   getPostCountToday,
   getPostCountThisWeek,
   getAllPosts,
+  fetchAllPostsPaginated,
   getTotalPostCount,
   getRecentPostCount,
   adminDeletePost,

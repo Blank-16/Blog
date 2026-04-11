@@ -52,9 +52,15 @@ const REQUIRED_FIELD_LABELS: Partial<Record<keyof PostFormValues, string>> = {
 
 interface PostFormProps {
   post?: Post;
+  /** Pass isAdmin from a parent that already has it (e.g. AddPostPage via usePostLimits)
+   *  to avoid an extra Appwrite round trip. Falls back to an internal check when omitted. */
+  isAdmin?: boolean;
 }
 
-export default function PostForm({ post }: PostFormProps) {
+export default function PostForm({
+  post,
+  isAdmin: isAdminProp,
+}: PostFormProps) {
   const {
     register,
     handleSubmit,
@@ -82,7 +88,9 @@ export default function PostForm({ post }: PostFormProps) {
   const router = useRouter();
   const userData = useAppSelector((state) => state.auth.userData);
   const [submitting, setSubmitting] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminInternal, setIsAdminInternal] = useState(false);
+  // Use the prop when the parent already has it; only query Appwrite when not provided.
+  const isAdmin = isAdminProp ?? isAdminInternal;
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [compressionInfo, setCompressionInfo] = useState<{
     before: number;
@@ -92,9 +100,11 @@ export default function PostForm({ post }: PostFormProps) {
   const [compressedFile, setCompressedFile] = useState<File | null>(null);
 
   useEffect(() => {
-    if (!userData) return;
-    appwriteService.isAdmin(userData.$id).then(setIsAdmin);
-  }, [userData]);
+    if (isAdminProp !== undefined) return;
+    if (!userData?.$id) return;
+    appwriteService.isAdmin(userData.$id).then(setIsAdminInternal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userData?.$id, isAdminProp]);
 
   // Restore draft on mount (new post only)
   useEffect(() => {
@@ -159,7 +169,9 @@ export default function PostForm({ post }: PostFormProps) {
           .filter(Boolean)
       : [];
 
-    const toastId = toast.loading(post ? "Updating post..." : "Publishing post...");
+    const toastId = toast.loading(
+      post ? "Updating post..." : "Publishing post...",
+    );
 
     try {
       if (post) {
@@ -170,7 +182,9 @@ export default function PostForm({ post }: PostFormProps) {
           const toUpload = compressedFile ?? data.image[0];
           const file = await appwriteService.uploadFile(toUpload, userData.$id);
           if (!file) {
-            toast.error("Image upload failed. Please try again.", { id: toastId });
+            toast.error("Image upload failed. Please try again.", {
+              id: toastId,
+            });
             setSubmitting(false);
             return;
           }
@@ -193,7 +207,9 @@ export default function PostForm({ post }: PostFormProps) {
         });
 
         if (!dbPost) {
-          toast.error("Failed to update post. Please try again.", { id: toastId });
+          toast.error("Failed to update post. Please try again.", {
+            id: toastId,
+          });
           setSubmitting(false);
           return;
         }
@@ -207,7 +223,9 @@ export default function PostForm({ post }: PostFormProps) {
         // and delete them from storage so we don't accumulate orphans.
         const oldEmbeddedIds = extractEmbeddedFileIds(post.content);
         const newEmbeddedIds = new Set(extractEmbeddedFileIds(data.content));
-        const removedIds = oldEmbeddedIds.filter((id) => !newEmbeddedIds.has(id));
+        const removedIds = oldEmbeddedIds.filter(
+          (id) => !newEmbeddedIds.has(id),
+        );
         if (removedIds.length > 0) {
           await appwriteService.deleteFiles(removedIds);
         }
@@ -222,8 +240,12 @@ export default function PostForm({ post }: PostFormProps) {
         const toUpload = compressedFile ?? data.image[0];
         const file = await appwriteService.uploadFile(toUpload, userData.$id);
         if (!file) {
-          toast.error("Image upload failed. Please try again.", { id: toastId });
-          setError("image", { message: "Image upload failed. Please try again." });
+          toast.error("Image upload failed. Please try again.", {
+            id: toastId,
+          });
+          setError("image", {
+            message: "Image upload failed. Please try again.",
+          });
           setSubmitting(false);
           return;
         }
@@ -244,7 +266,9 @@ export default function PostForm({ post }: PostFormProps) {
         });
 
         if (!dbPost) {
-          toast.error("Failed to create post. Please try again.", { id: toastId });
+          toast.error("Failed to create post. Please try again.", {
+            id: toastId,
+          });
           setSubmitting(false);
           return;
         }
@@ -286,7 +310,9 @@ export default function PostForm({ post }: PostFormProps) {
 
   const onInvalid = (formErrors: FieldErrors<PostFormValues>) => {
     const missingFields = Object.keys(formErrors)
-      .filter((key): key is keyof PostFormValues => key in REQUIRED_FIELD_LABELS)
+      .filter(
+        (key): key is keyof PostFormValues => key in REQUIRED_FIELD_LABELS,
+      )
       .map((key) => REQUIRED_FIELD_LABELS[key])
       .filter((label): label is string => Boolean(label));
 
@@ -295,22 +321,28 @@ export default function PostForm({ post }: PostFormProps) {
       return;
     }
 
-    const formattedFields = missingFields.map((field) => `- ${field}`).join("\n");
+    const formattedFields = missingFields
+      .map((field) => `- ${field}`)
+      .join("\n");
     toast.error(`Please fill the following:\n${formattedFields}`);
   };
 
   const slugTransform = useCallback(
     (value: string): string => {
-      if (!userData) return "";
+      if (!userData?.name) return "";
       return buildPostSlug(userData.name, value);
     },
-    [userData],
+    // Depend only on the name string - not the whole userData object reference
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userData?.name],
   );
 
   useEffect(() => {
     const sub = watch((value, { name }) => {
       if (name === "title") {
-        setValue("slug", slugTransform(value.title ?? ""), { shouldValidate: true });
+        setValue("slug", slugTransform(value.title ?? ""), {
+          shouldValidate: true,
+        });
       }
     });
     return () => sub.unsubscribe();
@@ -369,7 +401,9 @@ export default function PostForm({ post }: PostFormProps) {
                 {...register("title", { required: "Title is required" })}
               />
               {errors.title && (
-                <p className="mt-1 text-xs text-red-500">{errors.title.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.title.message}
+                </p>
               )}
             </div>
 
@@ -387,7 +421,9 @@ export default function PostForm({ post }: PostFormProps) {
                 }
               />
               {errors.slug && (
-                <p className="mt-1 text-xs text-red-500">{errors.slug.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.slug.message}
+                </p>
               )}
             </div>
 
@@ -406,9 +442,20 @@ export default function PostForm({ post }: PostFormProps) {
                   if (raw.trimStart().startsWith("{")) {
                     try {
                       const doc = JSON.parse(raw);
-                      const hasText = (nodes: { type?: string; text?: string; content?: unknown[] }[]): boolean =>
-                        nodes.some((n) => (n.type === "text" && !!n.text?.trim()) ||
-                          (n.content ? hasText(n.content as typeof nodes) : false));
+                      const hasText = (
+                        nodes: {
+                          type?: string;
+                          text?: string;
+                          content?: unknown[];
+                        }[],
+                      ): boolean =>
+                        nodes.some(
+                          (n) =>
+                            (n.type === "text" && !!n.text?.trim()) ||
+                            (n.content
+                              ? hasText(n.content as typeof nodes)
+                              : false),
+                        );
                       if (doc?.type === "doc" && Array.isArray(doc.content)) {
                         return hasText(doc.content) || "Content is required";
                       }
@@ -417,12 +464,17 @@ export default function PostForm({ post }: PostFormProps) {
                     }
                   }
                   // Legacy HTML content
-                  return raw.replace(/<[^>]*>/g, "").trim().length > 0 || "Content is required";
+                  return (
+                    raw.replace(/<[^>]*>/g, "").trim().length > 0 ||
+                    "Content is required"
+                  );
                 },
               }}
             />
             {errors.content && (
-              <p className="mt-1 text-xs text-red-500">{errors.content.message}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {errors.content.message}
+              </p>
             )}
           </div>
 
@@ -446,7 +498,9 @@ export default function PostForm({ post }: PostFormProps) {
                 }}
               />
               {errors.image && (
-                <p className="mt-1 text-xs text-red-500">{errors.image.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.image.message}
+                </p>
               )}
             </div>
 
@@ -470,7 +524,8 @@ export default function PostForm({ post }: PostFormProps) {
                     <span className="font-medium">
                       (
                       {Math.round(
-                        (1 - compressionInfo.after / compressionInfo.before) * 100,
+                        (1 - compressionInfo.after / compressionInfo.before) *
+                          100,
                       )}
                       % smaller)
                     </span>
@@ -491,13 +546,18 @@ export default function PostForm({ post }: PostFormProps) {
                 {...register("tags", {
                   required: "At least one tag is required",
                   validate: (value) =>
-                    value.split(",").map((tag) => tag.trim()).filter(Boolean).length > 0 ||
+                    value
+                      .split(",")
+                      .map((tag) => tag.trim())
+                      .filter(Boolean).length > 0 ||
                     "At least one tag is required",
                 })}
               />
               <p className="mt-1 text-xs text-muted">Comma-separated</p>
               {errors.tags && (
-                <p className="mt-1 text-xs text-red-500">{errors.tags.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.tags.message}
+                </p>
               )}
             </div>
 
@@ -507,11 +567,15 @@ export default function PostForm({ post }: PostFormProps) {
               {...register("status", { required: "Status is required" })}
             />
             {errors.status && (
-              <p className="mt-1 text-xs text-red-500">{errors.status.message}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {errors.status.message}
+              </p>
             )}
 
             {!post && (
-              <p className="text-xs text-muted italic">Draft auto-saves as you type.</p>
+              <p className="text-xs text-muted italic">
+                Draft auto-saves as you type.
+              </p>
             )}
 
             <Button
