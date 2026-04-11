@@ -57,6 +57,15 @@
   box-sizing: border-box;
 }
 
+/* Suppress all transitions on first paint to prevent the dark-mode flash
+   animating from white. The blocking script in layout.tsx removes this class
+   after the load event fires. */
+.no-transitions *,
+.no-transitions *::before,
+.no-transitions *::after {
+  transition: none !important;
+}
+
 html {
   scroll-behavior: auto;
 }
