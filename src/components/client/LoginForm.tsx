@@ -51,7 +51,7 @@ export default function LoginForm() {
 
         <h1 className="text-3xl mb-2 font-display mt-6">Welcome back.</h1>
         <p className="text-sm mb-8 text-muted">
-          Don&apos;t have an account?{' '}
+          Don't have an account?{' '}
           <Link
             href="/signup"
             className="underline underline-offset-2 text-ink transition-opacity hover:opacity-60"

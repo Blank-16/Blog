@@ -75,7 +75,7 @@ function AllPostsContent() {
     return (
       <div className="max-w-7xl mx-auto px-6 py-24 text-center">
         <p className="text-4xl mb-3 font-display">No posts yet.</p>
-        <p className="text-muted mb-8">You haven&apos;t published anything yet.</p>
+        <p className="text-muted mb-8">You haven't published anything yet.</p>
         <Link
           href="/add-post"
           className="inline-block px-6 py-3 text-sm font-medium border border-edge text-ink rounded-full transition-opacity hover:opacity-60"

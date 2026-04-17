@@ -229,7 +229,7 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
 
       {isAuthor && (
         <p className="text-sm text-muted border border-edge rounded-xl px-5 py-4">
-          You can&apos;t review your own post.
+          You can't review your own post.
         </p>
       )}
 

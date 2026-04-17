@@ -77,7 +77,7 @@ function AddPostContent() {
             <p className="text-5xl" role="img" aria-label="Stop">
               X
             </p>
-            <h2 className="font-display text-2xl">You&apos;re all caught up</h2>
+            <h2 className="font-display text-2xl">You're all caught up</h2>
             <p className="text-muted text-sm leading-relaxed">{limitReason}</p>
             <div className="pt-2 text-xs text-muted border border-edge rounded-xl px-5 py-4 text-left space-y-1">
               <p>
