@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-function setThemeCookie(value: 'dark' | 'light') {
+function setCookie(value: 'dark' | 'light') {
   const isSecure = window.location.protocol === 'https:';
 
   let cookie = `theme=${value}; path=/; max-age=31536000; SameSite=Lax`;
