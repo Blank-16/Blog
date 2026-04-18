@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import StoreProvider from "@/store/StoreProvider";
 import AuthInitializer from "@/components/client/AuthInitializer";
 import Header from "@/components/client/Header";
@@ -16,7 +17,6 @@ export const metadata: Metadata = {
   description:
     "A place for writers to share thoughts, stories, and perspectives that matter.",
   metadataBase: new URL(siteUrl || "http://localhost:3000"),
-
   openGraph: {
     type: "website",
     siteName: "Blogging Web",
@@ -24,18 +24,13 @@ export const metadata: Metadata = {
     description:
       "A place for writers to share thoughts, stories, and perspectives that matter.",
   },
-
   twitter: {
     card: "summary",
     title: "Blogging Web",
     description:
       "A place for writers to share thoughts, stories, and perspectives that matter.",
   },
-
-  icons: {
-    icon: "/logo.svg",
-  },
-
+  icons: { icon: "/logo.svg" },
   robots: {
     index: true,
     follow: true,
@@ -43,36 +38,32 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/*
-          Blocking script: runs synchronously before the browser paints anything.
-          Reads the saved theme from localStorage (or falls back to OS preference)
-          and sets the `dark` class on <html> immediately - no flash, no jitter.
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get('theme')?.value;
+  const theme = themeCookie === 'dark' ? 'dark' : 'light';
 
-          Also adds a `no-transitions` class that disables all CSS transitions
-          for the first frame, then removes it so subsequent interactions
-          animate normally. Without this, the body's transition-colors would
-          animate the initial background from white to dark every page load.
-        */}
+  return (
+    <html lang="en" className={theme} suppressHydrationWarning>
+      <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){
   try {
-    var saved = localStorage.getItem('theme');
+    var hasCookie = document.cookie.indexOf('theme=') !== -1;
+    if (hasCookie) return;
     var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var isDark = saved ? saved === 'dark' : prefersDark;
-    if (isDark) document.documentElement.classList.add('dark');
-    document.documentElement.classList.add('no-transitions');
-    window.addEventListener('load', function() {
-      document.documentElement.classList.remove('no-transitions');
-    });
+    if (prefersDark) {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+      document.cookie = 'theme=dark; path=/; max-age=31536000; SameSite=Lax';
+    } else {
+      document.cookie = 'theme=light; path=/; max-age=31536000; SameSite=Lax';
+    }
   } catch(e) {}
 })();`,
           }}
