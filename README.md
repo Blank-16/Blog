@@ -206,8 +206,8 @@ src/
 
 ```bash
 # 1. Clone
-git clone https://github.com/yourusername/blogging-web.git
-cd blogging-web
+git clone https://github.com/Blank-16/Blog.git
+cd Blog
 
 # 2. Install
 npm install
