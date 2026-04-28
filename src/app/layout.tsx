@@ -12,7 +12,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
 export const metadata: Metadata = {
   title: {
     default: "Blogging Web",
-    template: "%s – Blogging Web",
+    template: "%s - Blogging Web",
   },
   description:
     "A place for writers to share thoughts, stories, and perspectives that matter.",
