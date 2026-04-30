@@ -2,7 +2,7 @@ import { Query } from "appwrite";
 import Link from "next/link";
 import Image from "next/image";
 import appwriteService, { Post } from "@/lib/appwrite/appwriteService";
-import HomeGrid from "@/components/client/HomeGrid";
+import MoreStories from "@/components/client/MoreStories";
 import { formatDate, extractPreview } from "@/lib/utils";
 
 export const revalidate = 60;
@@ -128,23 +128,8 @@ export default async function HomePage() {
             </section>
           )}
 
-          {/* Remaining posts */}
-          {rest.length > 0 && (
-            <section className="max-w-5xl mx-auto px-6 py-12">
-              <div className="flex items-center justify-between mb-8">
-                <span className="text-[11px] tracking-[0.2em] uppercase text-muted">
-                  More stories
-                </span>
-                <Link
-                  href="/all-posts"
-                  className="text-xs text-muted underline underline-offset-4 transition-opacity hover:opacity-60"
-                >
-                  View all &rarr;
-                </Link>
-              </div>
-              <HomeGrid posts={rest} />
-            </section>
-          )}
+          {/* Remaining posts — infinite scroll */}
+          <MoreStories initialPosts={rest} />
         </>
       )}
     </div>

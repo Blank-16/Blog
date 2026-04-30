@@ -131,6 +131,25 @@ export async function searchPosts(query: string): Promise<Post[]> {
   }
 }
 
+export async function searchPostsByTag(tag: string): Promise<Post[]> {
+  try {
+    if (!tag.trim()) return [];
+    const result = await getDatabases().listDocuments<Post>(
+      config.appwriteDatabaseId,
+      config.appwriteCollectionId,
+      [
+        Query.equal('status', 'active'),
+        Query.contains('tags', tag.trim()),
+        Query.orderDesc('$createdAt'),
+        Query.limit(50),
+      ],
+    );
+    return result.documents;
+  } catch {
+    return [];
+  }
+}
+
 export async function addRating(
   postId: string,
   existingRatings: number[],

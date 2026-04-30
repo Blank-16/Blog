@@ -20,6 +20,7 @@ export {
   getPostByUrlParam,
   getPosts,
   searchPosts,
+  searchPostsByTag,
   addRating,
   addReview,
 } from './postService';

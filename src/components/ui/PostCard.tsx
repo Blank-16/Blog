@@ -1,7 +1,10 @@
-import Link from "next/link";
-import Image from "next/image";
-import appwriteService from "@/lib/appwrite/appwriteService";
-import { formatDate, extractPreview } from "@/lib/utils";
+'use client';
+
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import appwriteService from '@/lib/appwrite/appwriteService';
+import { formatDate, extractPreview } from '@/lib/utils';
 
 interface PostCardProps {
   $id: string;
@@ -26,17 +29,20 @@ export default function PostCard({
   urlSlug,
   index = 0,
 }: PostCardProps) {
-  const imageUrl = featuredImage
-    ? appwriteService.getFilePreview(featuredImage)
-    : null;
+  const router = useRouter();
+  const imageUrl = featuredImage ? appwriteService.getFilePreview(featuredImage) : null;
   const preview = extractPreview(content);
   const isFeatured = index === 0;
   const href = `/post/${urlSlug ?? $id}`;
 
   return (
-    <Link href={href} className="group block h-full">
-      <article
-        className={`h-full flex flex-col bg-card hover:bg-subtle transition-colors duration-200 ${isFeatured ? "p-7" : "p-5"}`}
+    <div
+      role="article"
+      onClick={() => router.push(href)}
+      className="group block h-full cursor-pointer"
+    >
+      <div
+        className={`h-full flex flex-col bg-card hover:bg-subtle transition-colors duration-200 ${isFeatured ? 'p-7' : 'p-5'}`}
       >
         {imageUrl && (
           <div className="relative w-full aspect-video mb-4 overflow-hidden rounded-lg">
@@ -54,18 +60,21 @@ export default function PostCard({
         {tags && tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {tags.slice(0, 2).map((tag) => (
-              <span
+              <Link
                 key={tag}
-                className="text-[10px] px-2 py-0.5 rounded-full border border-edge text-muted uppercase tracking-wide"
+                href={`/search?tag=${encodeURIComponent(tag)}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-[10px] px-2 py-0.5 rounded-full border border-edge text-muted uppercase
+                  tracking-wide hover:border-ink hover:text-ink transition-colors duration-150"
               >
                 {tag}
-              </span>
+              </Link>
             ))}
           </div>
         )}
 
         <h2
-          className={`font-display leading-snug mb-2 text-ink group-hover:opacity-60 transition-opacity duration-200 ${isFeatured ? "text-xl" : "text-base"}`}
+          className={`font-display leading-snug mb-2 text-ink group-hover:opacity-60 transition-opacity duration-200 ${isFeatured ? 'text-xl' : 'text-base'}`}
         >
           {title}
         </h2>
@@ -78,12 +87,10 @@ export default function PostCard({
 
         <div className="flex items-center gap-2 text-[11px] text-muted mt-auto">
           {authorName && <span>{authorName}</span>}
-          {authorName && $createdAt && (
-            <span className="opacity-30">&middot;</span>
-          )}
+          {authorName && $createdAt && <span className="opacity-30">&middot;</span>}
           {$createdAt && <span>{formatDate($createdAt)}</span>}
         </div>
-      </article>
-    </Link>
+      </div>
+    </div>
   );
 }
