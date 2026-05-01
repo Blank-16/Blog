@@ -17,9 +17,9 @@ const config: AppConfig = {
     process.env.NEXT_PUBLIC_APPWRITE_ADMINS_COLLECTION_ID ?? '',
 };
 
-// Warn at startup (dev only) if required vars are missing so errors are
-// caught immediately rather than surfacing as cryptic network failures.
-if (process.env.NODE_ENV === 'development') {
+// Warn at startup if required vars are missing — surfaces as a clear log
+// entry in Vercel function logs rather than a cryptic network error later.
+if (typeof window === 'undefined') {
   const required: (keyof AppConfig)[] = [
     'appwriteUrl',
     'appwriteProjectId',
@@ -29,7 +29,7 @@ if (process.env.NODE_ENV === 'development') {
   ];
   for (const key of required) {
     if (!config[key]) {
-      console.warn(`[config] Missing env var for "${key}". Check your .env.local file.`);
+      console.error(`[config] Missing required env var for "${key}". All Appwrite calls will fail.`);
     }
   }
 }

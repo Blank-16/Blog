@@ -13,8 +13,11 @@ interface LoginParams {
 }
 
 export class AuthService {
+  private _account: Account | null = null;
+
   private get account(): Account {
-    return new Account(getClient());
+    if (!this._account) this._account = new Account(getClient());
+    return this._account;
   }
 
   async createAccount({
