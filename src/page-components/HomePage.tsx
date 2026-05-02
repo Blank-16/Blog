@@ -1,9 +1,8 @@
 import { Query } from "appwrite";
-import Link from "next/link";
-import Image from "next/image";
 import appwriteService, { Post } from "@/lib/appwrite/appwriteService";
 import MoreStories from "@/components/client/MoreStories";
-import { formatDate, extractPreview } from "@/lib/utils";
+import FeaturedPost from "@/components/client/FeaturedPost";
+import Link from "next/link";
 
 export const revalidate = 60;
 
@@ -52,81 +51,7 @@ export default async function HomePage() {
       ) : (
         <>
           {/* Featured post */}
-          {featured && (
-            <section className="border-b border-edge">
-              <Link
-                href={`/post/${featured.urlSlug ?? featured.$id}`}
-                className="group block max-w-5xl mx-auto px-6 py-12 md:py-16"
-              >
-                <div className="md:grid md:grid-cols-[1fr_auto] md:gap-12 md:items-start">
-                  <div>
-                    <p className="text-[11px] tracking-[0.2em] uppercase text-muted mb-5">
-                      Featured
-                    </p>
-                    {featured.tags && featured.tags.length > 0 && (
-                      <div className="flex gap-1.5 mb-4">
-                        {featured.tags.slice(0, 2).map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[10px] uppercase tracking-widest px-2.5 py-0.5 border border-edge rounded-full text-muted"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] leading-tight tracking-[-0.02em] mb-4 text-ink group-hover:opacity-60 transition-opacity duration-300">
-                      {featured.title}
-                    </h2>
-                    {(() => {
-                      const preview = extractPreview(featured.content, 180);
-                      return preview ? (
-                        <p className="text-base text-muted font-light leading-relaxed max-w-xl mb-6">
-                          {preview}
-                        </p>
-                      ) : null;
-                    })()}
-                    <div className="flex items-center gap-3 text-xs text-muted">
-                      {featured.authorName && (
-                        <span>{featured.authorName}</span>
-                      )}
-                      {featured.authorName && featured.$createdAt && (
-                        <span className="opacity-30">&middot;</span>
-                      )}
-                      {featured.$createdAt && (
-                        <span>
-                          {formatDate(featured.$createdAt, {
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {featured.featuredImage &&
-                    (() => {
-                      const url = appwriteService.getFilePreview(
-                        featured.featuredImage,
-                      );
-                      return url ? (
-                        <div className="relative mt-8 md:mt-0 md:w-64 lg:w-80 aspect-[4/3] rounded-xl overflow-hidden flex-shrink-0">
-                          <Image
-                            src={url}
-                            alt={featured.title}
-                            fill
-                            priority
-                            sizes="(max-width: 768px) 100vw, 320px"
-                            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                          />
-                        </div>
-                      ) : null;
-                    })()}
-                </div>
-              </Link>
-            </section>
-          )}
+          {featured && <FeaturedPost post={featured} />}
 
           {/* Remaining posts — infinite scroll */}
           <MoreStories initialPosts={rest} />

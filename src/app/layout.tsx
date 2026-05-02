@@ -6,6 +6,7 @@ import AuthInitializer from "@/components/client/AuthInitializer";
 import Header from "@/components/client/Header";
 import Footer from "@/components/ui/Footer";
 import SmoothScroll from "@/components/client/SmoothScroll";
+import DevlogPanel from "@/components/client/DevlogPanel";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
@@ -75,6 +76,7 @@ export default async function RootLayout({
           <SmoothScroll />
           <Header />
           <main className="flex-1">{children}</main>
+          <DevlogPanel />
           <Footer />
         </StoreProvider>
       </body>
