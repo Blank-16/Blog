@@ -15,7 +15,7 @@ interface MoreStoriesProps {
 export default function MoreStories({ initialPosts }: MoreStoriesProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(initialPosts.length === PAGE_SIZE);
+  const [hasMore, setHasMore] = useState(initialPosts.length > 0);
   const [cursor, setCursor] = useState<string | null>(
     initialPosts.length > 0 ? initialPosts[initialPosts.length - 1].$id : null,
   );

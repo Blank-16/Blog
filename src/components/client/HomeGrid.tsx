@@ -10,7 +10,6 @@ interface HomeGridProps {
 
 export default function HomeGrid({ posts }: HomeGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
-  const animatedIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const grid = gridRef.current;
@@ -47,8 +46,6 @@ export default function HomeGrid({ posts }: HomeGridProps) {
       card.style.willChange = 'opacity, transform';
       observer.observe(card);
     });
-
-    posts.forEach((p) => animatedIds.current.add(p.$id));
 
     return () => observer.disconnect();
   }, [posts]);

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import PostActions from "@/components/client/PostActions";
 import PostContent from "@/components/ui/PostContent";
@@ -37,12 +38,13 @@ export default async function PostPage({ slug }: { slug: string }) {
       {post.tags && post.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-8">
           {post.tags.map((tag) => (
-            <span
+            <Link
               key={tag}
-              className="text-xs px-3 py-1 rounded-full border border-edge text-muted"
+              href={`/search?tag=${encodeURIComponent(tag)}`}
+              className="text-xs px-3 py-1 rounded-full border border-edge text-muted hover:border-ink hover:text-ink transition-colors duration-150"
             >
               {tag}
-            </span>
+            </Link>
           ))}
         </div>
       )}

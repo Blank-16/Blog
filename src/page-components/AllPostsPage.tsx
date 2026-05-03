@@ -13,6 +13,7 @@ const PAGE_SIZE = 9;
 async function fetchUserPosts(userId: string, afterCursor?: string): Promise<Post[]> {
   const queries: string[] = [
     Query.equal('userId', userId),
+    Query.orderDesc('$createdAt'),
     Query.limit(PAGE_SIZE),
   ];
   if (afterCursor) queries.push(Query.cursorAfter(afterCursor));

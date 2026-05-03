@@ -36,9 +36,22 @@ export default function SearchPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
+  // Prevents searchParams sync from overwriting user's manual input
+  const ignoreSyncRef = useRef(false);
 
   // Sync URL tag param → state when navigating between tag links
   useEffect(() => {
+    if (ignoreSyncRef.current) {
+      // Was blocked by manual input — check if a real tag param arrived anyway
+      // (user clicked a tag link after typing). If so, honour it and re-enable sync.
+      const tag = searchParams.get('tag') ?? '';
+      if (tag) {
+        ignoreSyncRef.current = false;
+        setQuery(tag);
+        setMode('tag');
+      }
+      return;
+    }
     const tag = searchParams.get('tag') ?? '';
     if (tag) {
       setQuery(tag);
@@ -85,6 +98,7 @@ export default function SearchPage() {
   }, [query, mode]);
 
   const handleModeSwitch = (next: SearchMode) => {
+    ignoreSyncRef.current = false;
     setMode(next);
     setQuery('');
     setResults([]);
@@ -95,6 +109,7 @@ export default function SearchPage() {
   };
 
   const clear = () => {
+    ignoreSyncRef.current = false;
     setQuery('');
     router.replace('/search');
     setTimeout(() => inputRef.current?.focus(), 50);
@@ -137,7 +152,7 @@ export default function SearchPage() {
             onChange={(e) => {
               setQuery(e.target.value);
               // If user types manually in tag mode, clear the URL param
-              if (mode === 'tag') router.replace('/search');
+              if (mode === 'tag') { ignoreSyncRef.current = true; router.replace('/search'); }
             }}
             placeholder={placeholder}
             className="w-full rounded-xl border border-edge bg-card text-ink text-base
