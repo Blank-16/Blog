@@ -1,6 +1,6 @@
-# Blogging Web
+# Blog Platform
 
-A production-grade full-stack blogging platform built with **Next.js 15 App Router** and **Appwrite**. Write and publish posts with a rich text editor, manage images with automatic compression, rate and review posts, and administrate the platform through a live analytics dashboard.
+A production-grade full-stack blogging platform and developer portfolio built with **Next.js 15 App Router** and **Appwrite**.
 
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
 ![Appwrite](https://img.shields.io/badge/Appwrite-18-pink?logo=appwrite)
@@ -8,169 +8,151 @@ A production-grade full-stack blogging platform built with **Next.js 15 App Rout
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss)
 ![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-2-764abc?logo=redux)
 
+**Live:** [your-domain.vercel.app](https://your-domain.vercel.app) &nbsp;|&nbsp; **Portfolio:** [your-domain.vercel.app/portfolio](https://your-domain.vercel.app/portfolio)
+
+---
+
+## What it is
+
+A full-stack blogging platform where the writer is also the product. Posts are written in a rich text editor, published with full SEO metadata, and served via Hybrid ISR for sub-100ms page loads. A public reading experience sits alongside a private authoring dashboard, analytics panel, and a developer portfolio at `/portfolio`.
+
 ---
 
 ## Features
 
-**Content**
-- Rich text editor (Tiptap) with headings, lists, blockquotes, code blocks, inline images
-- Client-side image compression via Canvas API before every upload (featured images and inline content images)
-- Draft auto-save to `localStorage` every second while writing
-- URL-slug routing: posts live at `/post/author-name-title--documentId`
-- Full-text search with 400ms debounce
+### Reading experience
+- Public post feed at `/public-posts` with infinite scroll via cursor-based pagination
+- Tag-based search routing — clicking any tag navigates to `/search?tag=<tag>` and runs a live query
+- Devlog panel — floating button on every page, lazy-fetched only on first hover, shows all posts tagged `devlog`
+- Full-text search with 300ms debounce, title and tag modes, mode toggle, URL param sync
+- Star ratings and text reviews on every post
+- Dark / light theme toggle synced with OS preference
 
-**User experience**
-- Dark / light theme toggle synced with OS preference, persisted to `localStorage`
-- GSAP fade-up animations on every route transition
-- Intersection Observer scroll-reveal on post grids
-- Skeleton loaders and spinner during auth resolution — no blank screens or content flash
+### Writing
+- Tiptap rich text editor: headings, lists, blockquotes, code blocks, inline images
+- Client-side image compression via Canvas API before every upload — reduces payloads by ~85%
+- Draft auto-save to `localStorage` every second
+- URL-slug routing: `/post/author-name-post-title--documentId`
+- Per-user post rate limiting (1/day, 5/week) enforced in real time, bypassed for admins
 
-**Auth and access control**
-- Sign up, log in, session persistence via Appwrite Auth
-- `AuthGuard` component with redirect logic for protected and public-only routes
-- Per-user post rate limiting (1/day, 5/week) enforced server-side, shown in real time
-- Admin role system: admins are stored in a separate collection and bypass all limits
-
-**SEO**
+### SEO
 - Dynamic `generateMetadata` per post: title, description, Open Graph, Twitter cards
 - JSON-LD `BlogPosting` structured data on every post page
-- Auto-generated `sitemap.xml` and `robots.txt`
-- On-demand ISR revalidation after publish or edit
-- Custom meta title, meta description, focus keyword, canonical URL, noindex toggle per post
+- Paginated `sitemap.xml` — fetches all active posts in cursor-paginated batches, never truncates at 25
+- `robots.txt` auto-generated
+- On-demand ISR revalidation after publish or edit using `revalidatePath` with `'layout'` type
+- Per-post SEO panel: meta title, meta description, focus keyword, canonical URL, noindex toggle
 
-**Admin dashboard**
+### Admin dashboard
+
+> Screenshot suggestions — see [Adding Screenshots](#adding-screenshots)
+
 - Tabbed interface: Overview, Posts, Admins
 - Live stat cards: total posts, active/inactive split, total ratings and reviews, admin count
-- Six Recharts data visualisations: posts per week, active ratio donut, top tags, ratings distribution, top posts by rating, authors radar
-- Post management: search, filter by status, delete with full storage cleanup
+- Six Recharts visualisations: posts per week, active ratio donut, top tags, ratings distribution, top posts by rating, authors radar
+- Post management: search, filter by status, delete with full storage cleanup (featured image + all embedded content images)
 - Admin management: add by user ID, remove, self-protection
 
----
-
-## Tech Stack
-
-| Layer | Technology | Why |
-|---|---|---|
-| Framework | Next.js 15 (App Router) | ISR, server components, server actions, file-based routing |
-| Backend | Appwrite Cloud | Auth, Database, Storage — no custom server needed |
-| State | Redux Toolkit | Shared auth state across server/client boundary |
-| Rich text | Tiptap | Extensible ProseMirror editor with JSON storage format |
-| Forms | React Hook Form | Zero re-renders on input, built-in validation |
-| Charts | Recharts | Composable chart primitives |
-| Animations | GSAP | Route-transition fade-up and IntersectionObserver grid reveals |
-| Styling | Tailwind CSS v4 | CSS variable design tokens, class-based dark mode |
-| Language | TypeScript 5 | Strict mode throughout |
+### Portfolio
+- Available at `/portfolio` — completely isolated from the blog shell (no Header, Footer, or DevlogPanel)
+- JetBrains Mono font scoped to the `/portfolio` subtree via `next/font/google`
+- Skills section uses evidence-based display (what you built with each skill) + usage-context grouping (primary / secondary / familiar) — no percentage bars
+- Data lives in `src/app/portfolio/data.ts` — edit content without touching UI code
 
 ---
 
-## Project Structure
+## Architecture
 
-```
-src/
-├── app/                              # Next.js App Router pages
-│   ├── layout.tsx                    # Root layout: Redux, Header, Footer, SmoothScroll
-│   ├── page.tsx                      # Home (ISR, 60s revalidation)
-│   ├── post/[slug]/page.tsx          # Post page: metadata, JSON-LD, hybrid ISR
-│   ├── add-post/page.tsx
-│   ├── edit-post/[slug]/page.tsx
-│   ├── all-posts/page.tsx
-│   ├── admin/page.tsx
-│   ├── search/page.tsx
-│   ├── login/page.tsx
-│   ├── signup/page.tsx
-│   ├── not-found.tsx
-│   ├── sitemap.ts                    # Auto-generated sitemap.xml
-│   ├── robots.ts                     # Auto-generated robots.txt
-│   ├── globals.css                   # Design tokens, Tiptap content styles
-│   └── actions/
-│       └── revalidatePost.ts         # Server Action: revalidates post + home + sitemap
-│
-├── page-components/                  # Full-page component implementations
-│   ├── HomePage.tsx                  # Server component, featured post + grid
-│   ├── PostPage.tsx                  # Server component, post detail
-│   ├── AddPostPage.tsx               # Client, rate-limit aware
-│   ├── EditPostPage.tsx              # Client, loads post then renders PostForm
-│   ├── AllPostsPage.tsx              # Client, cursor-paginated user posts
-│   ├── AdminPage.tsx                 # Client, tabbed dashboard
-│   ├── SearchPage.tsx                # Client, debounced live search
-│   ├── LoginPage.tsx
-│   └── SignupPage.tsx
-│
-├── components/
-│   ├── client/                       # Interactive components ('use client')
-│   │   ├── Header.tsx                # Sticky nav, mobile menu, admin badge
-│   │   ├── AuthGuard.tsx             # Redirect logic + spinner skeleton
-│   │   ├── AuthInitializer.tsx       # Session check on mount, populates Redux
-│   │   ├── PostForm.tsx              # Create/edit form, draft save, image compression
-│   │   ├── PostActions.tsx           # Edit/delete links (author only)
-│   │   ├── HomeGrid.tsx              # IntersectionObserver scroll-reveal grid
-│   │   ├── RatingsSection.tsx        # Star ratings + review form and list
-│   │   ├── TiptapEditor.tsx          # Rich text editor with image upload
-│   │   ├── RTE.tsx                   # react-hook-form Controller wrapper for Tiptap
-│   │   ├── SeoPanel.tsx              # Admin-only SEO fields + live score checker
-│   │   ├── DashboardCharts.tsx       # Six Recharts visualisations
-│   │   ├── LoginForm.tsx
-│   │   ├── SignupForm.tsx
-│   │   ├── LogoutBtn.tsx
-│   │   ├── ThemeToggle.tsx           # Dark/light, OS sync, persisted preference
-│   │   └── SmoothScroll.tsx          # GSAP route-transition animations
-│   │
-│   └── ui/                           # Server-safe UI primitives
-│       ├── Button.tsx                # variant prop, built-in disabled styles
-│       ├── Input.tsx                 # forwardRef, label, disabled styles
-│       ├── Select.tsx                # forwardRef, options array, disabled styles
-│       ├── Logo.tsx                  # SVG logo, optional priority preload
-│       ├── PostCard.tsx              # Card with image, tags, preview, meta
-│       ├── PostContent.tsx           # Tiptap JSON -> HTML renderer with DOMPurify
-│       ├── Container.tsx             # Max-width wrapper
-│       └── Footer.tsx
-│
-├── lib/
-│   ├── appwrite/
-│   │   ├── types.ts                  # Post, Admin, CreatePostParams, UpdatePostParams
-│   │   ├── config.ts                 # Env var bindings + dev-time validation warnings
-│   │   ├── client.ts                 # Appwrite client, Databases, Storage singletons
-│   │   ├── auth.ts                   # AuthService: login, signup, getCurrentUser, logout
-│   │   ├── postService.ts            # CRUD, search, ratings, reviews
-│   │   ├── adminService.ts           # Admin CRUD, rate limit queries, analytics queries
-│   │   ├── storageService.ts         # Upload, delete, deleteFiles (batch), getFilePreview
-│   │   ├── slugUtils.ts              # buildPostSlug, buildUrlParam
-│   │   └── appwriteService.ts        # Barrel re-export + default object for legacy imports
-│   ├── utils.ts                      # formatDate, extractPreview, toastStyle, extractEmbeddedFileIds
-│   ├── compressImage.ts              # Canvas API image compression (JPEG, max 1280px)
-│   └── usePostLimits.ts              # Hook: isAdmin + today/week post counts + canPost
-│
-└── store/
-    ├── store.ts                      # makeStore factory + RootState/AppDispatch types
-    ├── authSlice.ts                  # Auth state: status, loading, userData
-    ├── hooks.ts                      # useAppDispatch, useAppSelector (typed)
-    └── StoreProvider.tsx             # useRef-based per-tree store (SSR safe)
-```
-
----
-
-## Rendering Strategy
+### Rendering strategy
 
 | Page | Strategy | Revalidation |
 |---|---|---|
-| Home (`/`) | ISR | 60 seconds + on-demand after publish |
-| Post (`/post/[slug]`) | Hybrid ISR | Top 20 pre-built at deploy; new posts SSR on first visit, then cached 24h; on-demand after edit |
-| All Posts | CSR | Auth-gated, user-specific |
-| Add Post / Edit Post | CSR | Auth-gated, interactive |
-| Admin Dashboard | CSR | Auth-gated, admin-only |
-| Search | CSR | Live debounced queries |
-| Login / Signup | CSR | No SEO value |
+| Home (`/`) | ISR | 60s + on-demand after publish |
+| Post (`/post/[slug]`) | Hybrid ISR | Top 20 pre-built at deploy; new slugs SSR on first visit, cached 24h; on-demand after edit |
+| Public posts (`/public-posts`) | CSR | Cursor-paginated, client fetch on mount |
+| All Posts (`/all-posts`) | CSR | Auth-gated, user-specific |
+| Search (`/search`) | CSR | Live debounced queries, `?tag=` URL param |
+| Admin dashboard | CSR | Auth-gated, admin-only |
+| Portfolio (`/portfolio`) | Static | No dynamic data |
+
+### Server / client boundary
+
+`page-components/HomePage.tsx` and `page-components/PostPage.tsx` are async server components — they fetch from Appwrite during SSR with no `useEffect`. `components/client/` carries `'use client'` throughout. `PostContent` is client-rendered but SSR-safe via `isomorphic-dompurify`.
+
+### State management
+
+Redux is used for exactly one thing: auth state (`status`, `loading`, `userData`). `StoreProvider` uses `useRef` to create one store per component tree mount, preventing cross-request state leaking in App Router's concurrent SSR.
+
+### Image lifecycle
+
+Images are stored in Appwrite Storage, not the database. On post delete, `extractEmbeddedFileIds()` walks the Tiptap JSON tree and returns every Appwrite file ID found in image `src` attributes. The featured image and all embedded images are deleted via `Promise.allSettled` so one bad ID does not block the rest. On edit, old and new embedded ID sets are diffed and removed files are deleted.
+
+### URL slug strategy
+
+Posts live at `/post/author-name-post-title--documentId`. The `--` separator lets `getPostByUrlParam` extract the Appwrite document ID from the end of the slug for the database query, while the prefix improves SEO and readability. Posts without a slug fall back to raw `$id`.
 
 ---
 
-## Getting Started
+## Project structure
+
+```
+src/
+├── app/
+│   ├── layout.tsx                    # Root layout: Redux, Header, Footer, DevlogPanel
+│   ├── page.tsx                      # Home (ISR, 60s revalidation)
+│   ├── post/[slug]/page.tsx          # Post page: metadata, JSON-LD, hybrid ISR
+│   ├── public-posts/page.tsx         # Public infinite-scroll feed
+│   ├── all-posts/page.tsx            # Auth-gated user posts
+│   ├── search/page.tsx               # Search with Suspense boundary
+│   ├── portfolio/
+│   │   ├── layout.tsx                # Isolated layout: JetBrains Mono, no blog shell
+│   │   ├── page.tsx                  # Portfolio page
+│   │   └── data.ts                   # All portfolio content (edit here)
+│   ├── sitemap.ts                    # Paginated sitemap, covers all active posts
+│   ├── robots.ts
+│   └── actions/revalidatePost.ts     # Server action: revalidates post + home, layout type
+│
+├── page-components/
+│   ├── HomePage.tsx                  # Server: featured post + MoreStories client handoff
+│   ├── PostPage.tsx                  # Server: post detail, tag links
+│   ├── PublicPostsPage.tsx           # Client: public infinite scroll
+│   ├── AllPostsPage.tsx              # Client: auth-gated, cursor-paginated user posts
+│   ├── SearchPage.tsx                # Client: tag/title modes, URL param sync
+│   └── ...
+│
+├── components/
+│   ├── client/
+│   │   ├── FeaturedPost.tsx          # Client: featured post with tag links, no nested anchors
+│   │   ├── MoreStories.tsx           # Client: infinite scroll continuation from home page
+│   │   ├── HomeGrid.tsx              # Client: IntersectionObserver scroll-reveal
+│   │   ├── DevlogPanel.tsx           # Client: floating devlog drawer, lazy-fetched
+│   │   └── ...
+│   └── ui/
+│       ├── PostCard.tsx              # div+onClick pattern: no nested anchor bug
+│       ├── PostContent.tsx           # Tiptap JSON → HTML, isomorphic-dompurify
+│       └── ...
+│
+└── lib/
+    ├── appwrite/
+    │   ├── postService.ts            # CRUD, searchPosts, searchPostsByTag, ratings
+    │   ├── adminService.ts           # Admin CRUD, analytics, getTotalPostCount
+    │   ├── auth.ts                   # AuthService with memoized Account instance
+    │   ├── config.ts                 # Env var bindings, server-side warning in all envs
+    │   └── appwriteService.ts        # Barrel re-export
+    ├── utils.ts                      # formatDate, extractPreview, toastStyle, extractEmbeddedFileIds
+    └── compressImage.ts              # Canvas API: JPEG, max 1280px
+```
+
+---
+
+## Getting started
 
 ### Prerequisites
 
 - Node.js 18+
 - An [Appwrite](https://appwrite.io) project (Cloud or self-hosted)
 
-### Appwrite Setup
+### Appwrite setup
 
 **Posts collection attributes:**
 
@@ -200,29 +182,22 @@ src/
 | addedBy | String (255) | Yes |
 | addedAt | String (255) | Yes |
 
-**Storage bucket:** Create a bucket, enable file upload. The app sets per-file read permissions to `any()` and write permissions to the uploading user.
+**Storage bucket:** Create one bucket. Enable file upload. The app sets per-file read permissions to `any()` and write permissions to the uploading user.
+
+**Full-text search index:** On the posts collection, add a full-text index on the `tags` attribute to support `searchPostsByTag`. Without it, `Query.contains('tags', tag)` performs a document scan.
 
 ### Installation
 
 ```bash
-# 1. Clone
 git clone https://github.com/Blank-16/Blog.git
 cd Blog
-
-# 2. Install
 npm install
-
-# 3. Environment
 cp .env.local.sample .env.local
-# Edit .env.local with your Appwrite credentials
-
-# 4. Run
+# fill in .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-### Environment Variables
+### Environment variables
 
 ```bash
 NEXT_PUBLIC_APPWRITE_URL=https://cloud.appwrite.io/v1
@@ -231,15 +206,77 @@ NEXT_PUBLIC_APPWRITE_DATABASE_ID=your-database-id
 NEXT_PUBLIC_APPWRITE_COLLECTION_ID=your-posts-collection-id
 NEXT_PUBLIC_APPWRITE_BUCKET_ID=your-storage-bucket-id
 NEXT_PUBLIC_APPWRITE_ADMINS_COLLECTION_ID=your-admins-collection-id
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
 ```
+
+---
+
+## Deployment
+
+1. Push to GitHub
+2. Import on [vercel.com](https://vercel.com)
+3. Add all environment variables under `Settings > Environment Variables`
+4. Set `NEXT_PUBLIC_SITE_URL` to your production domain — no trailing slash
+5. Deploy
+6. Submit `https://your-domain.vercel.app/sitemap.xml` to [Google Search Console](https://search.google.com/search-console)
+
+---
+
+## Making the first admin
+
+1. Sign up through the app
+2. Find your user ID in the Appwrite console under `Auth > Users`
+3. Manually insert a document into the `admins` collection via the Appwrite console with `userId` set to your ID
+4. All subsequent admins can be added through the `/admin` dashboard UI
+
+---
+
+## Adding screenshots
+
+The admin dashboard is the most complex part of the project and the hardest to communicate in a README. Screenshots here would close that gap immediately.
+
+**Recommended shots and where to put them:**
+
+Place the images in `public/screenshots/` and reference them in the README sections below each description.
+
+| Screenshot | What to capture | Suggested filename |
+|---|---|---|
+| Admin overview | Stat cards + first chart visible above fold | `screenshots/admin-overview.png` |
+| Admin charts | All six Recharts panels visible (scroll to show) | `screenshots/admin-charts.png` |
+| Post management | Posts table with search active and delete modal open | `screenshots/admin-posts.png` |
+| Admin management | Admins tab with add-admin field focused | `screenshots/admin-admins.png` |
+| Editor | Tiptap editor mid-post with SEO panel open on the right | `screenshots/editor-seo.png` |
+| Post page | A published post with ratings section visible | `screenshots/post-page.png` |
+| Search | Search page with tag mode active and results showing | `screenshots/search-tags.png` |
+| Devlog panel | Panel open, showing devlog post list | `screenshots/devlog-panel.png` |
+| Portfolio | Full portfolio page desktop view | `screenshots/portfolio.png` |
+| Mobile | Home page on a ~390px mobile viewport | `screenshots/mobile-home.png` |
+
+**Suggested README sections to add after the Features list:**
+
+```markdown
+### Admin dashboard
+
+![Admin overview](public/screenshots/admin-overview.png)
+![Admin charts](public/screenshots/admin-charts.png)
+
+### Editor
+
+![Editor with SEO panel](public/screenshots/editor-seo.png)
+
+### Portfolio
+
+![Portfolio page](public/screenshots/portfolio.png)
+```
+
+Use [Shottr](https://shottr.cc) (macOS) or [Flameshot](https://flameshot.org) (Linux/Windows) for clean, consistent captures. Set browser zoom to 100% before capturing so text renders at native resolution.
 
 ---
 
 ## Scripts
 
 ```bash
-npm run dev      # Development server (http://localhost:3000)
+npm run dev      # Development server
 npm run build    # Production build
 npm run start    # Production server
 npm run lint     # ESLint
@@ -247,21 +284,14 @@ npm run lint     # ESLint
 
 ---
 
-## Deployment (Vercel)
+## Key engineering decisions
 
-1. Push to GitHub
-2. Import on [vercel.com](https://vercel.com)
-3. Add all environment variables in `Settings > Environment Variables`
-4. Set `NEXT_PUBLIC_SITE_URL` to your production domain (no trailing slash)
-5. Deploy
+**Cursor pagination over offset** — `Query.cursorAfter(lastId)` is stable when new posts are inserted. Offset pagination shifts all subsequent pages when a new post appears at the top, causing duplicates or skipped items in infinite scroll. Every paginated list in the app uses cursors.
 
-After deploying, submit `https://yourdomain.vercel.app/sitemap.xml` to [Google Search Console](https://search.google.com/search-console).
+**`'layout'` type in `revalidatePath`** — passing `'layout'` to `revalidatePath` busts the full layout subtree, not just the leaf page. Without it, a layout-level shared component (the featured post slot) can remain stale after a new post is published.
 
----
+**Nested anchor fix** — `PostCard` and `FeaturedPost` use a `<div onClick={() => router.push(href)}>` outer wrapper instead of `<Link>`, so tag links inside can be proper `<Link>` elements. HTML forbids `<a>` inside `<a>`; nested anchors break keyboard navigation and screen readers.
 
-## Making Someone an Admin
+**`serverExternalPackages` for Tiptap** — Tiptap and ProseMirror reference `window` and `document` during module initialisation. Without externalization, Vercel's SSR worker evaluates these modules server-side and crashes. Listing them in `serverExternalPackages` keeps them browser-only.
 
-1. Have the user sign up through the app
-2. Find their user ID in the Appwrite console under **Auth > Users**
-3. Go to `/admin` while logged in as an existing admin and paste the ID into the **Add Admin** field
-4. The first admin must be created by manually inserting a document into the `admins` collection via the Appwrite console
+**Memoized `Account` instance** — `AuthService.account` previously ran `new Account(getClient())` on every property access. The getter now uses a `_account` field with lazy init so one instance is reused for the lifetime of the service.

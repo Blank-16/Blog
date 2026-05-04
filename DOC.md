@@ -184,42 +184,65 @@ All `──`, `│`, `→`, `←`, `★`, `✓`, `○`, `▲`, `▼`, `❝`, `�
 
 ## Improvements Made
 
-Beyond bug fixes, these are deliberate quality improvements:
+Beyond bug fixes, these are deliberate quality improvements added through iterative development.
+
+### Core architecture
 
 **Store architecture**
-`store.ts` was refactored from a singleton (`const store = configureStore(...)`) to a factory (`makeStore()`). `StoreProvider` uses `useRef` to create one store per component tree. This prevents cross-request state leaking in SSR — a real production concern in App Router.
+`store.ts` refactored from a singleton to a `makeStore()` factory. `StoreProvider` uses `useRef` to create one store per component tree — prevents cross-request auth state leaking in App Router's concurrent SSR.
 
-**`Button`, `Input`, `Select` disabled states**
-All three form primitives now include `disabled:opacity-50 disabled:cursor-not-allowed` Tailwind utilities. Previously a disabled `<Input>` looked identical to an enabled one.
+**`revalidatePost` uses `'layout'` type**
+Changed `revalidatePath` calls to pass `'layout'` as the second argument. Busts the full layout subtree rather than just the leaf page, so shared layout components (the featured post slot) are correctly purged after a publish or edit.
 
-**`Button` variant type narrowing**
-`variantClass` was `Record<string, string>` — TypeScript accepted any string as a key. Changed to `Record<'primary' | 'outline' | 'ghost', string>` for proper exhaustiveness checking.
+**`serverExternalPackages` for Tiptap and ProseMirror**
+All Tiptap and ProseMirror packages added to `serverExternalPackages` in `next.config.mjs`. These packages reference `window` and `document` at module init — without externalization, Vercel's SSR worker crashes.
 
-**`Logo` optional `priority`**
-The Next.js `<Image>` `priority` prop was hardcoded `true` everywhere. Made it optional (default `false`). Header passes `priority` because the logo is always above the fold. Login/Signup forms do not.
+**Memoized `Account` instance in `AuthService`**
+`AuthService.account` previously ran `new Account(getClient())` on every property access. Changed to a `_account` field with lazy init — one instance reused for the service lifetime.
 
-**`config.ts` dev-time validation**
-Missing environment variables now log a warning at startup in development mode rather than failing silently at the first Appwrite API call with a cryptic network error.
+**`config.ts` env var validation in all environments**
+Missing env var warnings now run server-side in all environments, logging `console.error` to Vercel function logs rather than silently failing at the first Appwrite API call.
 
-**`HomeGrid` GPU layer management**
-Added `willChange: 'opacity, transform'` before each card's entrance animation to hint compositor layer promotion. After the transition completes, `willChange` is reset to `'auto'` to free the layer — leaving it set permanently would consume GPU memory for every card on screen.
+**`sitemap.ts` paginated fetch**
+Replaced a single `getPosts()` call (Appwrite's 25-doc default limit) with a cursor-paginated loop fetching 100 at a time. Sites with more than 25 posts now have complete sitemaps. Added `/public-posts` and `/search` to static entries.
 
-**`AuthGuard` loading state**
-The auth loading state previously returned `<div className="min-h-screen" />` — an invisible blank div. Replaced with a centered spinner and "Loading..." text so users see feedback during session resolution.
+### New features
 
-**`PostForm` content image compression**
-Images uploaded directly into the Tiptap editor content body are now compressed with `compressImage()` before upload, matching the behaviour of featured image uploads.
+**Public posts page (`/public-posts`)**
+A fully public, infinitely scrolling feed of all active posts — separate from the auth-gated `/all-posts`. Uses `IntersectionObserver` sentinel with `cursorAfter` pagination.
 
-**`slugUtils.ts` JSDoc corrected**
-The example in the JSDoc showed a capital letter in the output slug despite `slugify` always lowercasing everything. Corrected to an accurate example.
+**`MoreStories` component on the home page**
+Home page was capped at 7 posts. Extracted the "More stories" grid into a `MoreStories` client component seeded with the initial 6 posts from the server fetch. Infinite scroll loads more inline.
 
-**`signupForm.tsx` password validation**
-Added `minLength: 8` validation with a user-facing error message. The previous form only required the field to be non-empty.
+**Tag-based search routing**
+`searchPostsByTag` added using `Query.contains('tags', tag)`. `SearchPage` gains a title/tag mode toggle and reads `?tag=` on mount. Clicking any tag anywhere navigates to `/search?tag=<tag>` and auto-runs the search.
 
-**`SmoothScroll` cleanup safety**
-Added a `cancelled` boolean checked both after the dynamic GSAP import resolves and inside the `setTimeout`, preventing animation and timer setup on stale/unmounted component trees during fast navigation.
+**Tag links throughout**
+All tag renders across `PostCard`, `FeaturedPost`, `PostPage`, and `SearchPage` are now `<Link href="/search?tag=...">` elements. Consistent and clickable everywhere.
 
----
+**`DevlogPanel`**
+Floating panel fixed to `bottom-6 right-6` on all pages. Fetch fires only on first hover or click via `fetchedRef` dedup guard. Renders skeleton, retry on error, post count badge, Escape key and outside-click dismissal.
+
+**`FeaturedPost` client component**
+Extracted from `HomePage`. Outer `<div onClick>` handles card navigation; tag `<Link>` elements are proper anchors. Eliminates nested `<a>` bug.
+
+**`PostCard` nested anchor fix**
+Converted from `<Link>` outer wrapper to `<div onClick>`. Tag pills are now proper `<Link>` elements — eliminates HTML-invalid `<a>` inside `<a>` that broke keyboard navigation.
+
+**`AllPostsPage` ordering**
+Added `Query.orderDesc('$createdAt')` to `fetchUserPosts`. Previously posts returned in undefined Appwrite order.
+
+**Portfolio at `/portfolio`**
+Isolated layout — no `Header`, `Footer`, `DevlogPanel`, or Redux Provider. JetBrains Mono via `next/font/google`. Skills use evidence-based entries + primary/secondary/familiar pill groupings. All content in `src/app/portfolio/data.ts`.
+
+**`PostContent` module-scope refactor**
+`nodeToHtml` and `tiptapToHtml` extracted to module scope — stable references not recreated per render. `attrs` type fixed from `Record<string, string>` to `Record<string, string | number>` for correct heading `level` typing.
+
+**`HomeGrid` dead code removal**
+Removed `animatedIds` ref that was populated but never read. The `:not([data-animated])` selector already prevented re-observation.
+
+**Portfolio mobile optimisation**
+Nav collapses to logo + resume button on mobile with a scrollable sub-nav row below. Project title truncation removed. `pl-8` indents become `sm:pl-7`. Hero links stack vertically. Contact rows stack on mobile. All long values use `break-all`.
 
 ## What More Can Be Done
 
