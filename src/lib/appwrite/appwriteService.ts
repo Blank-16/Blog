@@ -19,6 +19,7 @@ export {
   getPost,
   getPostByUrlParam,
   getPosts,
+  getUserPosts,
   searchPosts,
   searchPostsByTag,
   addRating,

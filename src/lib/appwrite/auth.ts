@@ -72,6 +72,53 @@ export class AuthService {
     }
   }
 
+  async updateName(name: string): Promise<Models.User<Models.Preferences>> {
+    try {
+      return await this.account.updateName(name);
+    } catch (error) {
+      console.error("AuthService :: updateName :: error", error);
+      throw error;
+    }
+  }
+
+  async updateEmail(
+    email: string,
+    password: string,
+  ): Promise<Models.User<Models.Preferences>> {
+    try {
+      return await this.account.updateEmail(email, password);
+    } catch (error) {
+      console.error("AuthService :: updateEmail :: error", error);
+      throw error;
+    }
+  }
+
+  async updatePassword(
+    newPassword: string,
+    currentPassword: string,
+  ): Promise<Models.User<Models.Preferences>> {
+    try {
+      return await this.account.updatePassword(newPassword, currentPassword);
+    } catch (error) {
+      console.error("AuthService :: updatePassword :: error", error);
+      throw error;
+    }
+  }
+
+  async deleteAccount(): Promise<void> {
+    try {
+      // Appwrite does not expose a direct "delete account" endpoint on the
+      // client SDK — the standard pattern is to delete all sessions (logout)
+      // then call a server-side Function or the Management API. For now we
+      // delete all sessions so the account is effectively deactivated from
+      // the user's perspective. Wire to an Appwrite Function for hard delete.
+      await this.account.deleteSessions();
+    } catch (error) {
+      console.error("AuthService :: deleteAccount :: error", error);
+      throw error;
+    }
+  }
+
   async logout(): Promise<{ success: boolean }> {
     try {
       await this.account.deleteSessions();

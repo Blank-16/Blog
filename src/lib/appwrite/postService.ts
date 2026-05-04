@@ -113,6 +113,23 @@ export async function getPosts(
   }
 }
 
+export async function getUserPosts(userId: string): Promise<Post[]> {
+  try {
+    const result = await getDatabases().listDocuments<Post>(
+      config.appwriteDatabaseId,
+      config.appwriteCollectionId,
+      [
+        Query.equal('userId', userId),
+        Query.orderDesc('$createdAt'),
+        Query.limit(100),
+      ],
+    );
+    return result.documents;
+  } catch {
+    return [];
+  }
+}
+
 export async function searchPosts(query: string): Promise<Post[]> {
   try {
     if (!query.trim()) return [];
