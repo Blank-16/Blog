@@ -2,7 +2,7 @@ export const personal = {
   name: "Ansuman Pal",
   role: "Full-Stack Developer",
   tagline: "I build fast, scalable, AI-integrated software.",
-  bio: "Full-Stack Developer and Systems Programmer specialising in TypeScript, Java, and Python. I build AI-integrated web apps and resource-efficient CLI utilities. Currently pursuing a B.Tech in Computer Science at Lovely Professional University and seeking internships and job opportunities.",
+  bio: "Full-Stack Developer and Systems Programmer specialising in TypeScript and Python. I build AI-integrated web apps and resource-efficient CLI utilities. Currently pursuing a B.Tech in Computer Science at Lovely Professional University and seeking internships and job opportunities.",
   email: "ansumanpal16@gmail.com",
   phone: "",
   location: "Asansol, West Bengal — India",
@@ -48,7 +48,7 @@ export const projects: Project[] = [
       "GSAP",
     ],
     image: "/projects/blog.png",
-    liveUrl: undefined,
+    liveUrl: "https://ansuman-blogs.vercel.app/",
     repoUrl: "https://github.com/Blank-16/Blog",
     featured: true,
     year: 2026,
@@ -106,11 +106,11 @@ export const projects: Project[] = [
   },
 ];
 
-// Core skills shown with evidence — what you actually built with them.
-// Keep this to 6–8 entries max; these get the most visual weight.
+// Core skills shown with evidence 
+// Keep this to 6–8 entries max;
 export type CoreSkill = {
   name: string;
-  proof: string; // one tight sentence: what you built / how you used it
+  proof: string; 
 };
 
 export const coreSkills: CoreSkill[] = [
@@ -178,6 +178,10 @@ export const skillGroups: SkillGroup[] = [
       "Linux / WSL",
       "REST APIs",
       "Appwrite",
+      "MongoDB",
+      "Docker",
+      "Express",
+      "Vercel",
     ],
   },
   {
@@ -185,18 +189,14 @@ export const skillGroups: SkillGroup[] = [
     items: [
       "Java",
       "Python",
-      "MongoDB",
-      "Docker",
-      "Express",
       "PostgreSQL",
       "Redux Toolkit",
       "Maven",
-      "Vercel",
     ],
   },
   {
     context: "familiar",
-    items: ["C++", "C", "MySQL", "GraphQL"],
+    items: ["Go", "C++", "C", "MySQL", "GraphQL", "Redis"],
   },
 ];
 
@@ -210,6 +210,14 @@ export type Certificate = {
 };
 
 export const certificates: Certificate[] = [
+    {
+        id: "oracle-foundation-associate",
+        title: "Oracle Foundation Associate",
+        issuer: "Oracle",
+        date: "2026",
+        credentialUrl: "https://drive.google.com/file/d/1TzzPoM0Ww48El-rvSgs3Cyv52SpAd0vV/view?usp=sharing",
+        logoUrl: "",
+    },
   {
     id: "frontend-react-hackerrank",
     title: "Frontend Developer (React)",
@@ -227,15 +235,6 @@ export const certificates: Certificate[] = [
     logoUrl: "/certs/js-hackerrank.png",
   },
   {
-    id: "digital-skills-social-media",
-    title: "Digital Skills: Social Media",
-    issuer: "Accenture",
-    date: "2026",
-    logoUrl: "/certs/social-media-accenture.png",
-    credentialUrl:
-      "https://drive.google.com/file/d/1LFdKy0CTk9ZFzAkhoxO_ubKNWS_c6GRG/view?usp=sharing",
-  },
-  {
     id: "cloud-computing-nptel",
     title: "Cloud Computing",
     issuer: "NPTEL",
@@ -243,6 +242,15 @@ export const certificates: Certificate[] = [
     credentialUrl:
       "https://drive.google.com/file/d/144NoG5Rs9JISqDelsF8CLLmKJ4q-sHk6/view?usp=sharing",
     logoUrl: "/certs/nptel-cloud-computing.png",
+  },
+  {
+    id: "digital-skills-social-media",
+    title: "Digital Skills: Social Media",
+    issuer: "Accenture",
+    date: "2026",
+    logoUrl: "/certs/social-media-accenture.png",
+    credentialUrl:
+      "https://drive.google.com/file/d/1LFdKy0CTk9ZFzAkhoxO_ubKNWS_c6GRG/view?usp=sharing",
   },
   {
     id: "bits-&-bytes-of-computer-networking",
@@ -273,18 +281,18 @@ export type Achievement = {
 export const achievements: Achievement[] = [
   {
     id: "competitive-programming",
-    title: "200+ Problems Solved",
-    desc: "Solved 200+ problems across LeetCode, GeeksforGeeks, and HackerRank.",
+    title: "250+ Problems Solved",
+    desc: "Solved 250+ problems across LeetCode, GeeksforGeeks, HackerRank and CodeForces.",
   },
   {
     id: "leetcode-rating",
     title: "LeetCode 1500+ Rating",
-    desc: "Achieved a 1500+ contest rating, placing in the top tier of active competitors.",
+    desc: "Achieved a 1500+ contest rating.",
   },
   {
     id: "hackerrank-stars",
-    title: "HackerRank 5-Star Python",
-    desc: "Attained a 5-Star rating in Python and Gold Badges in Problem Solving.",
+    title: "HackerRank 5-Star in Python and Promblem Solving",
+    desc: "Attained a 5-Star rating and Gold Badges in Python and Problem Solving.",
   },
 ];
 

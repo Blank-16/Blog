@@ -1,11 +1,4 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
-
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Ansuman Pal — Portfolio",
@@ -19,7 +12,7 @@ export default function PortfolioLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${mono.variable} font-mono`} style={{ fontFamily: "var(--font-mono), monospace" }}>
+    <div className="font-mono" style={{ fontFamily: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" }}>
       {children}
     </div>
   );
