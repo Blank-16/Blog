@@ -11,6 +11,37 @@ interface PostActionsProps {
   post: Post;
 }
 
+function CopyLinkBtn() {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = window.location.href;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
+  return (
+    <button
+      onClick={copy}
+      className="text-sm underline underline-offset-4 text-muted transition-colors hover:text-ink"
+    >
+      {copied ? 'Copied!' : 'Copy link'}
+    </button>
+  );
+}
+
 export default function PostActions({ post }: PostActionsProps) {
   const router = useRouter();
   const userData = useAppSelector((state) => state.auth.userData);
@@ -23,62 +54,69 @@ export default function PostActions({ post }: PostActionsProps) {
   const handleDelete = async (): Promise<void> => {
     setDeleting(true);
 
-    const deleted = await appwriteService.deletePost(post.$id);
-    if (!deleted) {
+    try {
+      await appwriteService.deletePost(post.$id);
+
+      // Delete featured image
+      if (post.featuredImage) {
+        await appwriteService.deleteFile(post.featuredImage);
+      }
+
+      // Delete any images embedded inside the content body
+      const embeddedIds = extractEmbeddedFileIds(post.content);
+      if (embeddedIds.length > 0) {
+        await appwriteService.deleteFiles(embeddedIds);
+      }
+
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to delete post', error);
       setDeleting(false);
       setConfirming(false);
-      return;
     }
-
-    // Delete featured image
-    if (post.featuredImage) {
-      await appwriteService.deleteFile(post.featuredImage);
-    }
-
-    // Delete any images embedded inside the content body
-    const embeddedIds = extractEmbeddedFileIds(post.content);
-    if (embeddedIds.length > 0) {
-      await appwriteService.deleteFiles(embeddedIds);
-    }
-
-    router.push('/');
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <Link
-        href={`/edit-post/${post.$id}`}
-        className="text-sm underline underline-offset-4 text-ink transition-opacity hover:opacity-50"
-      >
-        Edit post
-      </Link>
-      <span className="text-edge">&middot;</span>
+    <div className="flex items-center gap-4 flex-wrap">
+      <CopyLinkBtn />
+      {isAuthor && (
+        <>
+          <span className="text-edge">&middot;</span>
+          <Link
+            href={`/edit-post/${post.$id}`}
+            className="text-sm underline underline-offset-4 text-ink transition-opacity hover:opacity-50"
+          >
+            Edit post
+          </Link>
+          <span className="text-edge">&middot;</span>
 
-      {confirming ? (
-        <span className="flex items-center gap-3 text-sm">
-          <span className="text-muted">Delete this post?</span>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="underline underline-offset-4 text-red-500 transition-opacity hover:opacity-50 disabled:opacity-40"
-          >
-            {deleting ? 'Deleting...' : 'Yes, delete'}
-          </button>
-          <button
-            onClick={() => setConfirming(false)}
-            disabled={deleting}
-            className="underline underline-offset-4 text-muted transition-opacity hover:opacity-50 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
-        </span>
-      ) : (
-        <button
-          onClick={() => setConfirming(true)}
-          className="text-sm underline underline-offset-4 text-red-500 transition-opacity hover:opacity-50"
-        >
-          Delete post
-        </button>
+          {confirming ? (
+            <span className="flex items-center gap-3 text-sm">
+              <span className="text-muted">Delete this post?</span>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="underline underline-offset-4 text-red-500 transition-opacity hover:opacity-50 disabled:opacity-40"
+              >
+                {deleting ? 'Deleting...' : 'Yes, delete'}
+              </button>
+              <button
+                onClick={() => setConfirming(false)}
+                disabled={deleting}
+                className="underline underline-offset-4 text-muted transition-opacity hover:opacity-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setConfirming(true)}
+              className="text-sm underline underline-offset-4 text-red-500 transition-opacity hover:opacity-50"
+            >
+              Delete post
+            </button>
+          )}
+        </>
       )}
     </div>
   );

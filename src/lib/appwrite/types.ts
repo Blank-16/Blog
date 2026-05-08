@@ -16,6 +16,7 @@ export interface Post extends Models.Document {
   tags?: string[];
   ratings?: number[];
   reviews?: string[];
+  views?: number;
   urlSlug?: string;
   metaTitle?: string;
   metaDescription?: string;

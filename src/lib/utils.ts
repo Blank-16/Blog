@@ -68,6 +68,26 @@ export function extractPreview(
   return "";
 }
 
+/** Returns estimated reading time in minutes (min 1). */
+export function readingTime(raw: string | undefined): number {
+  if (!raw) return 1;
+  let text = "";
+  if (!raw.trimStart().startsWith("{")) {
+    text = raw.replace(/<[^>]*>/g, " ");
+  } else {
+    try {
+      const doc = JSON.parse(raw) as TiptapNode;
+      if (doc?.type === "doc" && Array.isArray(doc.content)) {
+        text = collectText(doc.content).join(" ");
+      }
+    } catch {
+      text = raw;
+    }
+  }
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+
 /**
  * Shared toast style object for react-hot-toast.
  */

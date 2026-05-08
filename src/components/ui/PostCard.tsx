@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import appwriteService from '@/lib/appwrite/appwriteService';
-import { formatDate, extractPreview } from '@/lib/utils';
+import { formatDate, extractPreview, readingTime } from '@/lib/utils';
 
 interface PostCardProps {
   $id: string;
@@ -34,6 +34,7 @@ export default function PostCard({
   const preview = extractPreview(content);
   const isFeatured = index === 0;
   const href = `/post/${urlSlug ?? $id}`;
+  const mins = readingTime(content);
 
   return (
     <div
@@ -89,6 +90,8 @@ export default function PostCard({
           {authorName && <span>{authorName}</span>}
           {authorName && $createdAt && <span className="opacity-30">&middot;</span>}
           {$createdAt && <span>{formatDate($createdAt)}</span>}
+          {(authorName || $createdAt) && <span className="opacity-30">&middot;</span>}
+          <span>{mins} min read</span>
         </div>
       </div>
     </div>

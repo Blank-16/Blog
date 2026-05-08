@@ -417,7 +417,7 @@ export default function PortfolioPage() {
           <div className="space-y-4">
             {[
               { key: "email", val: personal.email, href: `mailto:${personal.email}` },
-              { key: "phone", val: personal.phone },
+             {/* key: "phone", val: personal.phone */},
               { key: "location", val: personal.location },
               personal.social.github
                 ? { key: "github", val: personal.social.github.replace("https://", ""), href: personal.social.github }
