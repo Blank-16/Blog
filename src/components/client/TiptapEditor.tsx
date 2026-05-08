@@ -74,6 +74,45 @@ function Toolbar({ editor, userId }: { editor: Editor; userId?: string }) {
     input.click();
   };
 
+  const importMarkdown = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.md,text/markdown,text/plain';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      // Convert markdown to basic HTML then let Tiptap parse it
+      const html = text
+        // Headings
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        // Bold / italic
+        .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Inline code
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        // Code blocks
+        .replace(/```[\w]*\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        // Blockquote
+        .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+        // Unordered list items
+        .replace(/^[-*+] (.+)$/gm, '<li>$1</li>')
+        // Ordered list items
+        .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+        // Horizontal rule
+        .replace(/^---$/gm, '<hr />')
+        // Paragraphs — double newline
+        .replace(/\n\n/g, '</p><p>')
+        // Wrap in paragraph
+        .replace(/^(?!<[h|b|p|l|c|u|o|s|h])(.+)/gm, '$1');
+      editor.chain().focus().setContent(`<p>${html}</p>`, true).run();
+    };
+    input.click();
+  };
+
   const items: ToolbarItem[] = [
     { type: 'button', label: 'H1', title: 'Heading 1', action: () => editor.chain().focus().toggleHeading({ level: 1 }).run(), active: editor.isActive('heading', { level: 1 }) },
     { type: 'button', label: 'H2', title: 'Heading 2', action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(), active: editor.isActive('heading', { level: 2 }) },
@@ -91,6 +130,8 @@ function Toolbar({ editor, userId }: { editor: Editor; userId?: string }) {
     { type: 'divider' },
     { type: 'button', label: 'Img URL', title: 'Insert image by URL', action: addImageByUrl },
     { type: 'button', label: uploading ? 'Uploading...' : 'Upload', title: 'Upload image', action: uploadImage },
+    { type: 'divider' },
+    { type: 'button', label: '.md', title: 'Import Markdown', action: importMarkdown },
     { type: 'divider' },
     { type: 'button', label: '<-', title: 'Undo', action: () => editor.chain().focus().undo().run() },
     { type: 'button', label: '->', title: 'Redo', action: () => editor.chain().focus().redo().run() },
@@ -200,10 +241,22 @@ export default function TiptapEditor({ value, onChange, userId }: TiptapEditorPr
 
   if (!editor) return null;
 
+  const text = editor.getText();
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
   return (
     <div className="rounded-xl overflow-hidden border border-edge">
       <Toolbar editor={editor} userId={userId} />
       <EditorContent editor={editor} />
+      {/* Footer: word count + reading time */}
+      <div className="flex items-center justify-end px-4 py-2 border-t border-edge bg-card">
+        <span className="text-[11px] text-muted tabular-nums">
+          {wordCount.toLocaleString()} {wordCount === 1 ? 'word' : 'words'}
+          <span className="mx-1.5 opacity-30">&middot;</span>
+          ~{readingTime} min read
+        </span>
+      </div>
     </div>
   );
 }
