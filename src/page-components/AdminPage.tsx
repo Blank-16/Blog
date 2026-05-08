@@ -224,13 +224,11 @@ function PostsTab({
     setDeletingId(post.$id);
     setDeleting(true);
     try {
-      const ok = await appwriteService.adminDeletePost(post.$id);
-      if (ok) {
-        onDelete(post.$id);
-        toast.success("Post deleted.");
-      } else {
-        toast.error("Failed to delete post.");
-      }
+      await appwriteService.adminDeletePost(post.$id);
+      onDelete(post.$id);
+      toast.success("Post deleted.");
+    } catch (error) {
+      toast.error("Failed to delete post.");
     } finally {
       setDeletingId(null);
       setDeleting(false);
@@ -571,14 +569,12 @@ function AdminDashboard() {
     }
     setAdminActionPending(true);
     try {
-      const ok = await appwriteService.removeAdmin(admin.$id);
-      if (!ok) {
-        toast.error("Failed to remove admin.");
-        return;
-      }
+      await appwriteService.removeAdmin(admin.$id);
       setAdmins((prev) => prev.filter((a) => a.$id !== admin.$id));
       setStats((s) => (s ? { ...s, totalAdmins: s.totalAdmins - 1 } : s));
       toast.success("Admin removed.");
+    } catch (error) {
+      toast.error("Failed to remove admin.");
     } finally {
       setAdminActionPending(false);
     }

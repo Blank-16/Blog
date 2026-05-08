@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
 import { formatDate } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errors';
 
 function ResultSkeleton() {
   return (
@@ -33,6 +34,7 @@ export default function SearchPage() {
   const [results, setResults] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
@@ -76,6 +78,7 @@ export default function SearchPage() {
     }
 
     setLoading(true);
+    setSearchError(null);
 
     debounceRef.current = setTimeout(async () => {
       try {
@@ -85,10 +88,11 @@ export default function SearchPage() {
         if (cancelledRef.current) return;
         setResults(posts);
         setSearched(true);
-      } catch {
+      } catch (e: unknown) {
         if (cancelledRef.current) return;
         setResults([]);
         setSearched(true);
+        setSearchError(getErrorMessage(e));
       } finally {
         if (!cancelledRef.current) setLoading(false);
       }
@@ -175,7 +179,19 @@ export default function SearchPage() {
         <div>{[1, 2, 3].map((i) => <ResultSkeleton key={i} />)}</div>
       )}
 
-      {!loading && searched && results.length === 0 && (
+      {!loading && searchError && (
+        <div className="py-10 text-center">
+          <p className="text-sm text-red-500 mb-3">{searchError}</p>
+          <button
+            onClick={() => { setSearchError(null); setSearched(false); }}
+            className="text-xs text-muted underline underline-offset-4 hover:text-ink transition-colors"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {!loading && !searchError && searched && results.length === 0 && (
         <div className="text-center py-16">
           <p className="font-display text-2xl text-ink mb-2">No results found</p>
           <p className="text-sm text-muted">

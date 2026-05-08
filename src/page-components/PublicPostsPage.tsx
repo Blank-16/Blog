@@ -3,8 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Query } from 'appwrite';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
 import HomeGrid from '@/components/client/HomeGrid';
+import { toastStyle } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errors';
 
 const PAGE_SIZE = 9;
 
@@ -25,6 +28,7 @@ export default function PublicPostsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +38,10 @@ export default function PublicPostsPage() {
       setPosts(docs);
       setHasMore(docs.length === PAGE_SIZE);
       setCursor(docs.length > 0 ? docs[docs.length - 1].$id : null);
+      setLoading(false);
+    }).catch((e: unknown) => {
+      if (cancelled) return;
+      setLoadError(getErrorMessage(e));
       setLoading(false);
     });
     return () => { cancelled = true; };
@@ -47,6 +55,9 @@ export default function PublicPostsPage() {
       setPosts((prev) => [...prev, ...docs]);
       setHasMore(docs.length === PAGE_SIZE);
       if (docs.length > 0) setCursor(docs[docs.length - 1].$id);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e), { style: toastStyle });
+      setHasMore(false);
     } finally {
       setLoadingMore(false);
     }
@@ -67,6 +78,20 @@ export default function PublicPostsPage() {
     return (
       <div className="max-w-5xl mx-auto px-6 py-24 text-center">
         <p className="text-2xl font-display text-muted">Loading stories...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-5xl mx-auto px-6 py-24 text-center">
+        <p className="text-sm text-red-500 mb-4">{loadError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-xs text-muted underline underline-offset-4 hover:text-ink transition-colors"
+        >
+          Reload
+        </button>
       </div>
     );
   }

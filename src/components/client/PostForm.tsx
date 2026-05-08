@@ -11,6 +11,7 @@ import appwriteService, {
 } from "@/lib/appwrite/appwriteService";
 import { compressImage } from "@/lib/compressImage";
 import { extractEmbeddedFileIds, toastStyle } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/errors";
 import { revalidatePost } from "@/app/actions/revalidatePost";
 import toast, { Toaster } from "react-hot-toast";
 import Button from "@/components/ui/Button";
@@ -89,6 +90,8 @@ export default function PostForm({
   const userData = useAppSelector((state) => state.auth.userData);
   const [submitting, setSubmitting] = useState(false);
   const [isAdminInternal, setIsAdminInternal] = useState(false);
+  const [draftSaveState, setDraftSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   // Use the prop when the parent already has it; only query Appwrite when not provided.
   const isAdmin = isAdminProp ?? isAdminInternal;
   const [localPreview, setLocalPreview] = useState<string | null>(null);
@@ -131,6 +134,7 @@ export default function PostForm({
     let timer: ReturnType<typeof setTimeout>;
     const sub = watch((values) => {
       clearTimeout(timer);
+      setDraftSaveState('saving');
       timer = setTimeout(() => {
         try {
           localStorage.setItem(
@@ -141,8 +145,10 @@ export default function PostForm({
               tags: values.tags,
             }),
           );
+          setDraftSaveState('saved');
+          setLastSavedAt(new Date());
         } catch {
-          // Ignore storage quota errors
+          setDraftSaveState('idle');
         }
       }, 1000);
     });
@@ -181,13 +187,6 @@ export default function PostForm({
         if (data.image[0]) {
           const toUpload = compressedFile ?? data.image[0];
           const file = await appwriteService.uploadFile(toUpload, userData.$id);
-          if (!file) {
-            toast.error("Image upload failed. Please try again.", {
-              id: toastId,
-            });
-            setSubmitting(false);
-            return;
-          }
           newFileId = file.$id;
         }
 
@@ -205,14 +204,6 @@ export default function PostForm({
           canonicalUrl: data.canonicalUrl || undefined,
           noIndex: data.noIndex,
         });
-
-        if (!dbPost) {
-          toast.error("Failed to update post. Please try again.", {
-            id: toastId,
-          });
-          setSubmitting(false);
-          return;
-        }
 
         // Clean up the old featured image if it was replaced
         if (data.image[0] && newFileId !== post.featuredImage) {
@@ -239,16 +230,6 @@ export default function PostForm({
         /* Create flow */
         const toUpload = compressedFile ?? data.image[0];
         const file = await appwriteService.uploadFile(toUpload, userData.$id);
-        if (!file) {
-          toast.error("Image upload failed. Please try again.", {
-            id: toastId,
-          });
-          setError("image", {
-            message: "Image upload failed. Please try again.",
-          });
-          setSubmitting(false);
-          return;
-        }
 
         const dbPost = await appwriteService.createPost({
           title: data.title,
@@ -264,14 +245,6 @@ export default function PostForm({
           canonicalUrl: data.canonicalUrl || undefined,
           noIndex: data.noIndex,
         });
-
-        if (!dbPost) {
-          toast.error("Failed to create post. Please try again.", {
-            id: toastId,
-          });
-          setSubmitting(false);
-          return;
-        }
 
         const urlParam = buildUrlParam(userData.name, data.title, dbPost.$id);
 
@@ -302,8 +275,8 @@ export default function PostForm({
         setSubmitting(false);
         router.push(`/post/${urlParam}`);
       }
-    } catch {
-      toast.error("Something went wrong. Please try again.", { id: toastId });
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e), { id: toastId, style: toastStyle });
       setSubmitting(false);
     }
   };
@@ -366,6 +339,35 @@ export default function PostForm({
     setCompressionInfo(null);
     setCompressing(true);
 
+    try {
+      const compressed = await compressImage(file);
+      setCompressedFile(compressed);
+      if (compressed !== file) {
+        setCompressionInfo({ before: file.size, after: compressed.size });
+        URL.revokeObjectURL(url);
+        setLocalPreview(URL.createObjectURL(compressed));
+      }
+    } finally {
+      setCompressing(false);
+    }
+  };
+
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    // Inject into react-hook-form image field
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    setValue('image', dt.files as unknown as FileList);
+    // Run the same compression pipeline
+    const url = URL.createObjectURL(file);
+    setLocalPreview(url);
+    setCompressionInfo(null);
+    setCompressing(true);
     try {
       const compressed = await compressImage(file);
       setCompressedFile(compressed);
@@ -485,18 +487,31 @@ export default function PostForm({
             </h3>
 
             <div>
-              <Input
-                label="Featured Image"
-                type="file"
-                accept="image/png, image/jpg, image/jpeg, image/gif"
-                {...register("image", {
-                  required: !post ? "Featured image is required" : false,
-                })}
-                onChange={(e) => {
-                  register("image").onChange(e);
-                  handleImageChange(e);
-                }}
-              />
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleFileDrop}
+                className={`rounded-lg border-2 border-dashed transition-colors duration-150 p-1
+                  ${isDragging ? 'border-ink bg-subtle' : 'border-edge'}`}
+              >
+                <Input
+                  label="Featured Image"
+                  type="file"
+                  accept="image/png, image/jpg, image/jpeg, image/gif"
+                  {...register("image", {
+                    required: !post ? "Featured image is required" : false,
+                  })}
+                  onChange={(e) => {
+                    register("image").onChange(e);
+                    handleImageChange(e);
+                  }}
+                />
+                {isDragging && (
+                  <p className="text-xs text-center text-muted py-2">
+                    Drop to set as featured image
+                  </p>
+                )}
+              </div>
               {errors.image && (
                 <p className="mt-1 text-xs text-red-500">
                   {errors.image.message}
@@ -573,9 +588,30 @@ export default function PostForm({
             )}
 
             {!post && (
-              <p className="text-xs text-muted italic">
-                Draft auto-saves as you type.
-              </p>
+              <div className="flex items-center gap-2 h-4">
+                {draftSaveState === 'saving' && (
+                  <span className="text-xs text-muted italic flex items-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-muted animate-pulse inline-block" />
+                    Saving draft...
+                  </span>
+                )}
+                {draftSaveState === 'saved' && lastSavedAt && (
+                  <span className="text-xs text-muted flex items-center gap-1.5">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+                      className="text-emerald-500">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    Draft saved &middot;{' '}
+                    {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+                {draftSaveState === 'idle' && (
+                  <span className="text-xs text-muted italic opacity-50">
+                    Draft auto-saves as you type
+                  </span>
+                )}
+              </div>
             )}
 
             <Button

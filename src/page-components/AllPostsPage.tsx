@@ -10,6 +10,7 @@ import PostCard from '@/components/ui/PostCard';
 import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
 import { useAppSelector } from '@/store/hooks';
 import { toastStyle } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errors';
 
 const PAGE_SIZE = 9;
 
@@ -163,6 +164,7 @@ function AllPostsContent() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -173,6 +175,10 @@ function AllPostsContent() {
       setPosts(docs);
       setHasMore(docs.length === PAGE_SIZE);
       setCursor(docs.length > 0 ? docs[docs.length - 1].$id : null);
+      setLoading(false);
+    }).catch((e: unknown) => {
+      if (cancelled) return;
+      setLoadError(getErrorMessage(e));
       setLoading(false);
     });
     return () => { cancelled = true; };
@@ -187,6 +193,9 @@ function AllPostsContent() {
       setPosts((prev) => [...prev, ...docs]);
       setHasMore(docs.length === PAGE_SIZE);
       if (docs.length > 0) setCursor(docs[docs.length - 1].$id);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e), { style: toastStyle });
+      setHasMore(false); // stop retrying automatically
     } finally {
       setLoadingMore(false);
     }
@@ -211,6 +220,20 @@ function AllPostsContent() {
     return (
       <div className="max-w-5xl mx-auto px-6 py-24 text-center">
         <p className="text-2xl font-display text-muted">Loading your stories...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-5xl mx-auto px-6 py-24 text-center">
+        <p className="text-sm text-red-500 mb-4">{loadError}</p>
+        <button
+          onClick={() => { setLoadError(null); setLoading(true); }}
+          className="text-xs text-muted underline underline-offset-4 hover:text-ink transition-colors"
+        >
+          Try again
+        </button>
       </div>
     );
   }

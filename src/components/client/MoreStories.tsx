@@ -3,8 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Query } from 'appwrite';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import appwriteService, { Post } from '@/lib/appwrite/appwriteService';
 import HomeGrid from '@/components/client/HomeGrid';
+import { toastStyle } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errors';
 
 const PAGE_SIZE = 6;
 
@@ -35,6 +38,9 @@ export default function MoreStories({ initialPosts }: MoreStoriesProps) {
       setPosts((prev) => [...prev, ...docs]);
       setHasMore(docs.length === PAGE_SIZE);
       if (docs.length > 0) setCursor(docs[docs.length - 1].$id);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e), { style: toastStyle });
+      setHasMore(false);
     } finally {
       setLoadingMore(false);
     }

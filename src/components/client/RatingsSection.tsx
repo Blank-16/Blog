@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAppSelector } from "@/store/hooks";
 import appwriteService, { Post } from "@/lib/appwrite/appwriteService";
+import { getErrorMessage } from "@/lib/errors";
 
 interface RatingsSectionProps {
   post: Post;
@@ -127,30 +128,20 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
         ratings,
         starValue,
       );
-      if (!updatedWithRating) {
-        // Roll back the optimistic update on failure
-        setRatings(ratings);
-        setReviews(reviews);
-        setError("Failed to save rating. Please try again.");
-        return;
-      }
-
       const updatedWithReview = await appwriteService.addReview(
         post.$id,
         updatedWithRating.reviews ?? reviews,
         encoded,
       );
-      if (!updatedWithReview) {
-        // Roll back the optimistic update on failure
-        setRatings(ratings);
-        setReviews(reviews);
-        setError("Failed to save review. Please try again.");
-        return;
-      }
-
-      // Reconcile with the server's authoritative state
       setRatings(updatedWithRating.ratings ?? optimisticRatings);
       setReviews(updatedWithReview.reviews ?? optimisticReviews);
+    } catch (e: unknown) {
+      // Roll back optimistic update
+      setRatings(ratings);
+      setReviews(reviews);
+      setStarValue(starValue);
+      setReviewText(reviewText.trim());
+      setError(getErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
