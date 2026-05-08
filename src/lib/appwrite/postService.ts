@@ -2,8 +2,9 @@ import { ID, Query, Models } from 'appwrite';
 import { getDatabases } from './client';
 import config from './config';
 import { Post, CreatePostParams, UpdatePostParams } from './types';
+import { AppError, logServiceError } from '../errors';
 
-export async function createPost(params: CreatePostParams): Promise<Post | null> {
+export async function createPost(params: CreatePostParams): Promise<Post> {
   try {
     return await getDatabases().createDocument<Post>(
       config.appwriteDatabaseId,
@@ -12,8 +13,8 @@ export async function createPost(params: CreatePostParams): Promise<Post | null>
       params,
     );
   } catch (error) {
-    console.error('postService :: createPost :: error', error);
-    return null;
+    logServiceError('postService::createPost', error);
+    throw new AppError(error);
   }
 }
 
@@ -31,7 +32,7 @@ export async function updatePost({
   focusKeyword,
   canonicalUrl,
   noIndex,
-}: UpdatePostParams): Promise<Post | null> {
+}: UpdatePostParams): Promise<Post> {
   try {
     const updateData: Partial<Omit<Post, keyof Models.Document>> = {
       title,
@@ -55,22 +56,21 @@ export async function updatePost({
       updateData,
     );
   } catch (error) {
-    console.error('postService :: updatePost :: error', error);
-    return null;
+    logServiceError('postService::updatePost', error);
+    throw new AppError(error);
   }
 }
 
-export async function deletePost(slug: string): Promise<boolean> {
+export async function deletePost(slug: string): Promise<void> {
   try {
     await getDatabases().deleteDocument(
       config.appwriteDatabaseId,
       config.appwriteCollectionId,
       slug,
     );
-    return true;
   } catch (error) {
-    console.error('postService :: deletePost :: error', error);
-    return false;
+    logServiceError('postService::deletePost', error);
+    throw new AppError(error);
   }
 }
 
@@ -82,20 +82,29 @@ export async function getPost(slug: string): Promise<Post | null> {
       slug,
     );
   } catch (error) {
-    console.error('postService :: getPost :: error', error);
+    const appErr = new AppError(error);
+    if (appErr.isNotFound) return null;
+    logServiceError('postService::getPost', error);
     return null;
   }
 }
 
-/**
- * Looks up a post from a full URL param like "john-how-to-build--abc12345".
- * Extracts the real $id from after the "--" separator, falls back to
- * treating the whole string as a raw $id for old posts without a urlSlug.
- */
 export async function getPostByUrlParam(urlParam: string): Promise<Post | null> {
   const sep = urlParam.lastIndexOf('--');
   const realId = sep !== -1 ? urlParam.slice(sep + 2) : urlParam;
-  return getPost(realId);
+  const post = await getPost(realId);
+  if (post) {
+    // Fire-and-forget — never blocks page render, never surfaces to user
+    getDatabases()
+      .updateDocument(
+        config.appwriteDatabaseId,
+        config.appwriteCollectionId,
+        realId,
+        { views: (post.views ?? 0) + 1 },
+      )
+      .catch(() => {});
+  }
+  return post;
 }
 
 export async function getPosts(
@@ -108,7 +117,7 @@ export async function getPosts(
       queries,
     );
   } catch (error) {
-    console.error('postService :: getPosts :: error', error);
+    logServiceError('postService::getPosts', error);
     return null;
   }
 }
@@ -125,14 +134,15 @@ export async function getUserPosts(userId: string): Promise<Post[]> {
       ],
     );
     return result.documents;
-  } catch {
+  } catch (error) {
+    logServiceError('postService::getUserPosts', error);
     return [];
   }
 }
 
 export async function searchPosts(query: string): Promise<Post[]> {
+  if (!query.trim()) return [];
   try {
-    if (!query.trim()) return [];
     const result = await getDatabases().listDocuments<Post>(
       config.appwriteDatabaseId,
       config.appwriteCollectionId,
@@ -143,14 +153,15 @@ export async function searchPosts(query: string): Promise<Post[]> {
       ],
     );
     return result.documents;
-  } catch {
-    return [];
+  } catch (error) {
+    logServiceError('postService::searchPosts', error);
+    throw new AppError(error);
   }
 }
 
 export async function searchPostsByTag(tag: string): Promise<Post[]> {
+  if (!tag.trim()) return [];
   try {
-    if (!tag.trim()) return [];
     const result = await getDatabases().listDocuments<Post>(
       config.appwriteDatabaseId,
       config.appwriteCollectionId,
@@ -162,8 +173,9 @@ export async function searchPostsByTag(tag: string): Promise<Post[]> {
       ],
     );
     return result.documents;
-  } catch {
-    return [];
+  } catch (error) {
+    logServiceError('postService::searchPostsByTag', error);
+    throw new AppError(error);
   }
 }
 
@@ -171,7 +183,7 @@ export async function addRating(
   postId: string,
   existingRatings: number[],
   rating: number,
-): Promise<Post | null> {
+): Promise<Post> {
   try {
     return await getDatabases().updateDocument<Post>(
       config.appwriteDatabaseId,
@@ -180,8 +192,8 @@ export async function addRating(
       { ratings: [...existingRatings, rating] },
     );
   } catch (error) {
-    console.error('postService :: addRating :: error', error);
-    return null;
+    logServiceError('postService::addRating', error);
+    throw new AppError(error);
   }
 }
 
@@ -189,7 +201,7 @@ export async function addReview(
   postId: string,
   existingReviews: string[],
   review: string,
-): Promise<Post | null> {
+): Promise<Post> {
   try {
     return await getDatabases().updateDocument<Post>(
       config.appwriteDatabaseId,
@@ -198,7 +210,7 @@ export async function addReview(
       { reviews: [...existingReviews, review] },
     );
   } catch (error) {
-    console.error('postService :: addReview :: error', error);
-    return null;
+    logServiceError('postService::addReview', error);
+    throw new AppError(error);
   }
 }

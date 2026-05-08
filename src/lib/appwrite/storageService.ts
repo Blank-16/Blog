@@ -1,17 +1,17 @@
 import { ID, Permission, Role, Models } from 'appwrite';
 import { getStorage } from './client';
 import config from './config';
+import { AppError, logServiceError } from '../errors';
 
 export async function uploadFile(
   file: File,
   ownerUserId?: string,
-): Promise<Models.File | null> {
+): Promise<Models.File> {
+  if (!file) throw new AppError({ code: 400, type: 'storage_invalid_file', message: 'No file provided' });
+  if (!config.appwriteBucketId || config.appwriteBucketId === 'undefined') {
+    throw new AppError({ code: 500, type: 'storage_bucket_not_found', message: 'Storage bucket not configured' });
+  }
   try {
-    if (!file) return null;
-    if (!config.appwriteBucketId || config.appwriteBucketId === 'undefined') {
-      console.error('storageService :: uploadFile :: missing bucket ID');
-      return null;
-    }
     const permissions = [
       Permission.read(Role.any()),
       ownerUserId
@@ -25,8 +25,8 @@ export async function uploadFile(
       permissions,
     );
   } catch (error) {
-    console.error('storageService :: uploadFile :: error', error);
-    return null;
+    logServiceError('storageService::uploadFile', error);
+    throw new AppError(error);
   }
 }
 

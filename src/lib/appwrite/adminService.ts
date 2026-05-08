@@ -5,6 +5,7 @@ import { Admin, Post } from './types';
 import { deletePost, getPost } from './postService';
 import { deleteFile, deleteFiles } from './storageService';
 import { extractEmbeddedFileIds } from '../utils';
+import { AppError, logServiceError } from '../errors';
 
 export async function isAdmin(userId: string): Promise<boolean> {
   try {
@@ -35,10 +36,10 @@ export async function getAdmins(): Promise<Admin[]> {
 export async function addAdmin(
   userId: string,
   addedByUserId: string,
-): Promise<Admin | null> {
+): Promise<Admin> {
   try {
     const already = await isAdmin(userId);
-    if (already) return null;
+    if (already) throw new AppError({ code: 409, type: 'document_already_exists', message: 'User is already an admin' });
     return await getDatabases().createDocument<Admin>(
       config.appwriteDatabaseId,
       config.appwriteAdminsCollectionId,
@@ -50,22 +51,22 @@ export async function addAdmin(
       },
     );
   } catch (error) {
-    console.error('adminService :: addAdmin :: error', error);
-    return null;
+    if (error instanceof AppError) throw error;
+    logServiceError('adminService::addAdmin', error);
+    throw new AppError(error);
   }
 }
 
-export async function removeAdmin(documentId: string): Promise<boolean> {
+export async function removeAdmin(documentId: string): Promise<void> {
   try {
     await getDatabases().deleteDocument(
       config.appwriteDatabaseId,
       config.appwriteAdminsCollectionId,
       documentId,
     );
-    return true;
   } catch (error) {
-    console.error('adminService :: removeAdmin :: error', error);
-    return false;
+    logServiceError('adminService::removeAdmin', error);
+    throw new AppError(error);
   }
 }
 
@@ -161,25 +162,19 @@ export async function getRecentPostCount(days = 7): Promise<number> {
  * - the featured image
  * - any images embedded inside the Tiptap content
  */
-export async function adminDeletePost(postId: string): Promise<boolean> {
-  // Fetch the post first so we can identify all files to clean up
+export async function adminDeletePost(postId: string): Promise<void> {
   const post = await getPost(postId);
-  const deleted = await deletePost(postId);
-  if (!deleted) return false;
-
-  if (post) {
-    // Delete featured image
-    if (post.featuredImage) {
-      await deleteFile(post.featuredImage);
-    }
-    // Delete any images embedded in the content body
-    const embeddedIds = extractEmbeddedFileIds(post.content);
-    if (embeddedIds.length > 0) {
-      await deleteFiles(embeddedIds);
-    }
+  try {
+    await deletePost(postId);
+  } catch (error) {
+    logServiceError('adminService::adminDeletePost', error);
+    throw new AppError(error);
   }
-
-  return true;
+  if (post) {
+    if (post.featuredImage) await deleteFile(post.featuredImage);
+    const embeddedIds = extractEmbeddedFileIds(post.content);
+    if (embeddedIds.length > 0) await deleteFiles(embeddedIds);
+  }
 }
 
 /**
