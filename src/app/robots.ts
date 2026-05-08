@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         // These routes have no SEO value and should not be indexed
-        disallow: ['/admin', '/add-post', '/edit-post/', '/login', '/signup'],
+        disallow: ['/admin', '/add-post', '/edit-post/', '/login', '/signup', '/profile', '/all-posts'],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
