@@ -244,59 +244,56 @@ Removed `animatedIds` ref that was populated but never read. The `:not([data-ani
 **Portfolio mobile optimisation**
 Nav collapses to logo + resume button on mobile with a scrollable sub-nav row below. Project title truncation removed. `pl-8` indents become `sm:pl-7`. Hero links stack vertically. Contact rows stack on mobile. All long values use `break-all`.
 
-## What More Can Be Done
+## Shipped Features — Complete List
 
-These are the next features that would meaningfully improve the project. Each includes why it matters for the codebase and what it demonstrates technically.
+All features that were built and shipped across the iterative development of this project.
 
-### High impact
+### Reading
+- Cursor-based infinite scroll on `/public-posts`, `/all-posts`, and home page
+- Reading time estimate computed from Tiptap JSON word count
+- Reading progress bar (2px fixed, fills on scroll)
+- Related posts fetched server-side by primary tag
+- Optimistic UI for star ratings and text reviews (immediate update, rollback on failure)
+- Tag links on all post cards, featured post, post pages, and search results
+- `/tag/[tag]` ISR pages for SEO-friendly tag browsing
+- Copy link button using Clipboard API with 1.5s "Copied!" feedback
+- Devlog panel — floating, lazy-fetched on first hover, Escape + outside-click dismissal
 
-**1. Optimistic UI for ratings**
-Currently the star rating submit button is disabled and shows a spinner while waiting for two sequential Appwrite calls (`addRating` then `addReview`). The user sees no feedback for ~500ms on each interaction. Implement optimistic updates: immediately update local state on submit, then reconcile with the server response or roll back on failure. Demonstrates understanding of React state, async patterns, and perceived performance.
+### Writing
+- Tiptap rich text editor: headings, lists, blockquotes, code blocks, inline images
+- Markdown import via `.md` file upload — converts to Tiptap content
+- Canvas API image compression (~85% reduction, max 1280px JPEG)
+- Drag-and-drop featured image upload (injects into react-hook-form via DataTransfer)
+- Word count + reading time in editor footer (live, updates on every keystroke)
+- Draft auto-save to localStorage with live save indicator
+- Full SEO panel: meta title, description, focus keyword, canonical URL, noIndex
 
-**2. Pagination on the home page**
-The home page fetches exactly 7 posts. There is no way to browse older posts except through the auth-gated `/all-posts`. Add a public infinite-scroll or "Load more" section below the grid using cursor-based pagination (`Query.cursorAfter`). This pattern already exists in `AllPostsPage` and could be extracted into a reusable hook.
+### Admin
+- Six Recharts visualisations
+- Post management with full storage cleanup on delete
+- Admin management with self-protection guard
+- View counter (fire-and-forget on every post page visit)
 
-**3. Tag-based filtering**
-The admin dashboard shows top tags but clicking a tag does nothing. Add tag filter pages at `/tag/[tag]` using Appwrite's `Query.contains('tags', tag)`. These pages would be ISR-cached, SEO-indexed, and linkable — meaningfully improving content discoverability.
+### User accounts
+- Profile page: name, email, password update
+- Danger zone: delete all posts, delete account (typed confirmation)
+- Edit/delete action bar on every card in `/all-posts`
 
-**4. Reading time estimate**
-`extractPreview` already walks the Tiptap JSON tree to count characters. Adding a reading time estimate (`Math.ceil(wordCount / 200)` minutes) requires the same tree walk. Display it on `PostCard` and `PostPage`. Simple to implement, noticeably improves UX.
+### Infrastructure
+- Hybrid ISR: home (60s), posts (24h + on-demand), tags (1h), portfolio (static)
+- Paginated sitemap covering all active posts
+- `robots.txt` disallowing auth/admin routes
+- `AppError` class with Appwrite code mapping
+- `PostContentBoundary` error boundary for corrupted content
+- `serverExternalPackages` for Tiptap/ProseMirror
+- Env var validation at server startup in all environments
 
-**5. Image upload via drag-and-drop on the featured image field**
-The featured image input is a plain `<input type="file">`. Adding drag-and-drop requires listening to `dragover`, `dragleave`, `drop` events on a wrapper div, extracting `e.dataTransfer.files[0]`, and passing it through the existing `compressImage` pipeline. Demonstrates event handling without adding any dependencies.
-
-### Medium impact
-
-**6. Toast notifications for network errors in `AllPostsPage`**
-The `loadMore` function has a `catch` block that silently swallows errors. Add a `react-hot-toast` error notification on failure so the user knows the request failed and can retry. The `Toaster` is already rendered by `PostForm` on those pages.
-
-**7. Post view count**
-Appwrite's database supports atomic increments. Add a `views` integer field to the posts collection and increment it in `getPostByUrlParam` on each visit. Display it on the post page and in the admin dashboard. This demonstrates understanding of atomic operations and the tradeoff between accuracy and performance (incrementing on every SSR render vs. client-side after hydration).
-
-**8. Markdown import**
-Add a toolbar button to `TiptapEditor` that accepts a `.md` file upload and converts it to Tiptap JSON. Tiptap's `@tiptap/pm` parser can convert markdown to ProseMirror nodes. Demonstrates file handling and format conversion.
-
-**9. Post scheduling**
-Add a `publishAt` datetime field to the posts collection. Set `status: 'inactive'` at creation time and use a cron job (Appwrite Functions or a Vercel cron route) to flip posts active at the scheduled time and trigger ISR revalidation. Demonstrates background job patterns and the full content lifecycle.
-
-**10. Full-text search upgrade**
-The current `searchPosts` uses `Query.contains('title', query)` — it only matches on the title field and requires an exact substring match. Appwrite supports full-text search indexes. Adding one on the `title` field (and optionally `content`) enables prefix matching and relevance ranking. Update the index in the Appwrite console and change `Query.contains` to `Query.search`.
-
-### Lower priority / polish
-
-**11. Unit tests for pure utilities**
-`slugUtils.ts`, `utils.ts`, `compressImage.ts`, and `usePostLimits.ts` are all pure functions or deterministic hooks with no Appwrite dependency. These are ideal candidates for Vitest or Jest unit tests. Testing `buildPostSlug` edge cases (special characters, very long names, empty strings) is a concrete starting point.
-
-**12. Error boundary**
-There is no React Error Boundary in the tree. If `PostContent`'s `generateHTML` throws an unhandled exception during render (malformed Tiptap JSON from a future schema change), the entire page crashes. Wrapping `PostContent` in an error boundary with a fallback "Content unavailable" message provides graceful degradation.
-
-**13. Keyboard navigation in the Tiptap toolbar**
-The toolbar buttons are focusable but there is no `Tab` order management or `aria-pressed` state. Adding `role="toolbar"`, `aria-pressed={item.active}`, and arrow-key navigation between buttons would make the editor screen-reader accessible.
-
-**14. `robots.ts` disallow admin routes**
-Currently `robots.ts` allows all paths. Search engines should not index `/admin`, `/add-post`, `/edit-post/*`, `/login`, or `/signup`. Add `disallow` rules for these paths.
-
----
+### Portfolio
+- Isolated layout at `/portfolio` — no blog chrome
+- JetBrains Mono via next/font/google
+- Live IST clock
+- Evidence-based skills display
+- Mobile-optimised nav
 
 ## Interview Talking Points
 
