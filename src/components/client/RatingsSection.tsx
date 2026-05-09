@@ -123,18 +123,15 @@ export default function RatingsSection({ post }: RatingsSectionProps) {
     setReviewText("");
 
     try {
-      const updatedWithRating = await appwriteService.addRating(
+      const updated = await appwriteService.addRatingAndReview(
         post.$id,
         ratings,
+        reviews,
         starValue,
-      );
-      const updatedWithReview = await appwriteService.addReview(
-        post.$id,
-        updatedWithRating.reviews ?? reviews,
         encoded,
       );
-      setRatings(updatedWithRating.ratings ?? optimisticRatings);
-      setReviews(updatedWithReview.reviews ?? optimisticReviews);
+      setRatings(updated.ratings ?? optimisticRatings);
+      setReviews(updated.reviews ?? optimisticReviews);
     } catch (e: unknown) {
       // Roll back optimistic update
       setRatings(ratings);
