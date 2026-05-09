@@ -238,24 +238,33 @@ if (blob.size >= file.size) return file;       // skip if compressed is larger
 
 ---
 
-## 12. Fire-and-forget view counter
+## 12. Client-side view counter via `ViewCounter` component
 
-**Decision:** Increment the view counter asynchronously after returning the post, with `.catch(() => {})`.
+**Decision:** Increment the view counter via a dedicated `'use client'` component (`ViewCounter.tsx`) placed on the post page, rather than automatically in the server-side `getPostByUrlParam`.
 
-**Why not await:** A failed view counter increment should never delay a page load. The post content is already fetched and ready. Making the user wait for a non-critical counter update is the wrong trade-off.
+**Why client-side:**
+The previous server-side approach in `getPostByUrlParam` had several accuracy issues:
+- **Build-time increments:** `generateStaticParams` calls `getPostByUrlParam`, causing every post to start with at least 1 view before a human ever sees it.
+- **SSR over-counting:** Next.js can trigger multiple SSR passes for the same page under certain conditions (e.g., metadata generation and page render), double-counting views.
+- **Internal fetches:** Sitemap generation and admin stats also call `getPostByUrlParam`, further inflating counts.
 
-```ts
-// src/lib/appwrite/postService.ts
-const post = await getPost(realId);   // this is awaited — it's the page content
-if (post) {
-  getDatabases()
-    .updateDocument(/* ... */, { views: (post.views ?? 0) + 1 })
-    .catch(() => {});                 // this is not — it's a side effect
+**The client-side solution:**
+Moving the logic to a client component using `useRef` ensures the increment fires exactly once per mount — only when a real human visitor loads the page in a browser.
+
+```tsx
+// src/components/client/ViewCounter.tsx
+export default function ViewCounter({ postId }: { postId: string }) {
+  const fired = useRef(false);
+  useEffect(() => {
+    if (fired.current) return;
+    fired.current = true;
+    appwriteService.incrementPostViews(postId).catch(() => {});
+  }, [postId]);
+  return null;
 }
-return post;
 ```
 
-**Why not a separate API route:** An API route would add latency for the client, complexity in the implementation, and another network request per page view. The server component already has an Appwrite connection open — using it for an extra `updateDocument` call costs almost nothing.
+This ensures the view counter is a directionally accurate measure of human traffic rather than a count of database fetch operations.
 
 ---
 

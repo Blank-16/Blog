@@ -38,13 +38,15 @@ src/
 Browser request
   → Next.js Edge Runtime (route matching)
   → src/app/post/[slug]/page.tsx (generateStaticParams pre-built top 20, else SSR)
+  → src/app/post/[slug]/loading.tsx         [Streaming skeleton]
   → page-components/PostPage.tsx (async server component)
-      → postService.getPostByUrlParam()         [Appwrite SDK, server-side]
-          → getPost(realId)                     [single document fetch]
-          → view counter increment              [fire-and-forget updateDocument]
-      → searchPostsByTag(post.tags[0])          [related posts, server-side]
+      → postService.getPostByUrlParam()     [Appwrite SDK, server-side]
+          → getPost(realId)                 [single document fetch]
+      → searchPostsByTag(post.tags[0])      [related posts, server-side]
   → React Server Component renders HTML
-  → ReadingProgress, RatingsSection             [client hydration]
+  → ReadingProgress, RatingsSection         [client hydration]
+  → ViewCounter (client component)
+      → postService.incrementPostViews()    [Fired exactly once on mount]
 ```
 
 ### Write path (create post)
@@ -79,11 +81,12 @@ Route navigation
 
 ---
 
-## Service layer design
+### Service layer design
 
 ### Error contract
 
-Write functions (`createPost`, `updatePost`, `deletePost`, `uploadFile`, `addRating`, `addReview`, `addAdmin`, `removeAdmin`) throw `AppError` on all failures. Callers do not null-check — they `try/catch`.
+Write functions (`createPost`, `updatePost`, `deletePost`, `uploadFile`, `addRatingAndReview`, `addAdmin`, `removeAdmin`) throw `AppError` on all failures. Callers do not null-check — they `try/catch`.
+
 
 Read functions (`getPost`, `getPosts`, `getUserPosts`, `searchPosts`, `searchPostsByTag`) return `null` or `[]` on failure for read stability. Callers check the return value.
 
@@ -274,9 +277,8 @@ The `--` double-dash separator is the extraction key:
 // postService.getPostByUrlParam
 const sep = urlParam.lastIndexOf('--');
 const realId = sep !== -1 ? urlParam.slice(sep + 2) : urlParam;
+return getPost(realId);
 ```
-
-`lastIndexOf` handles post titles that contain `--` — the rightmost occurrence is always the separator. If no `--` is found, the entire param is treated as a raw document ID (backwards compat for pre-slug posts).
 
 ---
 

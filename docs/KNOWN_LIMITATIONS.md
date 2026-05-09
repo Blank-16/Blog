@@ -30,17 +30,17 @@ Both auth errors (`user_session_not_found`) and transient network errors resolve
 
 ## 2. Data layer
 
-### 2.1 View counter has no deduplication
+### 2.1 View counter lacks session deduplication
 
-**File:** `src/lib/appwrite/postService.ts` — `getPostByUrlParam()`
+**File:** `src/components/client/ViewCounter.tsx`
 
-Every call to `getPostByUrlParam` increments `views` by one — fired on every ISR cache-miss, every direct SSR request, and every page refresh. No IP, session, or 24-hour cooldown deduplication. The counter is directionally useful but not accurate.
+Views are incremented via a client-side component using `useRef` to ensure the call fires exactly once per mount, preventing increments on SSR or re-renders. However, there is still no IP, session, or 24-hour cooldown deduplication. Multiple visits by the same user will still inflate the counter.
 
 ### 2.2 Ratings allow repeat submissions
 
-**File:** `src/lib/appwrite/postService.ts` — `addRating()`
+**File:** `src/lib/appwrite/postService.ts` — `addRatingAndReview()`
 
-Ratings are appended to an array with no `userId` stored alongside each entry. One user can submit unlimited ratings on the same post, inflating or deflating the average.
+Ratings and reviews are consolidated into a single atomic update to prevent state inconsistency. However, they are still appended to arrays with no `userId` stored alongside each entry. One user can submit unlimited ratings on the same post.
 
 ### 2.3 `getPosts` returns null on failure instead of throwing
 
@@ -170,11 +170,7 @@ Navigating away from `/edit-post/[slug]` silently discards changes. No `beforeun
 
 If a document referenced by `cursorAfter` is deleted mid-scroll, Appwrite returns a `document_not_found` error. Infinite scroll stops and cannot resume. There is no fallback to offset pagination or cursor reset.
 
-### 6.3 No loading skeleton on post page
-
-There is no `loading.tsx` at `src/app/post/[slug]/`. Slow Appwrite responses show a blank page until the server component resolves.
-
-### 6.4 Portfolio clock flashes empty on first render
+### 6.3 Portfolio clock flashes empty on first render
 
 **File:** `src/app/portfolio/LiveClock.tsx`
 
