@@ -18,12 +18,15 @@ export {
   deletePost,
   getPost,
   getPostByUrlParam,
+  incrementPostViews,
   getPosts,
   getUserPosts,
+  fetchAllPostsPaginated,
   searchPosts,
   searchPostsByTag,
   addRating,
   addReview,
+  addRatingAndReview,
 } from './postService';
 
 export {
@@ -34,7 +37,6 @@ export {
   getPostCountToday,
   getPostCountThisWeek,
   getAllPosts,
-  fetchAllPostsPaginated,
   getTotalPostCount,
   getRecentPostCount,
   adminDeletePost,

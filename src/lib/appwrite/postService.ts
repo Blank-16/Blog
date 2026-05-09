@@ -92,19 +92,22 @@ export async function getPost(slug: string): Promise<Post | null> {
 export async function getPostByUrlParam(urlParam: string): Promise<Post | null> {
   const sep = urlParam.lastIndexOf('--');
   const realId = sep !== -1 ? urlParam.slice(sep + 2) : urlParam;
-  const post = await getPost(realId);
-  if (post) {
-    // Fire-and-forget — never blocks page render, never surfaces to user
-    getDatabases()
-      .updateDocument(
-        config.appwriteDatabaseId,
-        config.appwriteCollectionId,
-        realId,
-        { views: (post.views ?? 0) + 1 },
-      )
-      .catch(() => {});
+  return getPost(realId);
+}
+
+export async function incrementPostViews(postId: string): Promise<void> {
+  try {
+    const post = await getPost(postId);
+    if (!post) return;
+    await getDatabases().updateDocument(
+      config.appwriteDatabaseId,
+      config.appwriteCollectionId,
+      postId,
+      { views: (post.views ?? 0) + 1 },
+    );
+  } catch (error) {
+    logServiceError('postService::incrementPostViews', error);
   }
-  return post;
 }
 
 export async function getPosts(
@@ -122,22 +125,43 @@ export async function getPosts(
   }
 }
 
-export async function getUserPosts(userId: string): Promise<Post[]> {
-  try {
-    const result = await getDatabases().listDocuments<Post>(
-      config.appwriteDatabaseId,
-      config.appwriteCollectionId,
-      [
-        Query.equal('userId', userId),
-        Query.orderDesc('$createdAt'),
-        Query.limit(100),
-      ],
-    );
-    return result.documents;
-  } catch (error) {
-    logServiceError('postService::getUserPosts', error);
-    return [];
+/**
+ * Fetches ALL posts matching baseQueries by walking through cursor pages.
+ */
+export async function fetchAllPostsPaginated(
+  baseQueries: string[] = [],
+): Promise<Post[]> {
+  const PAGE = 100;
+  const all: Post[] = [];
+  let cursor: string | undefined;
+
+  while (true) {
+    const queries = [
+      ...baseQueries,
+      Query.orderDesc('$createdAt'),
+      Query.limit(PAGE),
+      ...(cursor ? [Query.cursorAfter(cursor)] : []),
+    ];
+    try {
+      const result = await getDatabases().listDocuments<Post>(
+        config.appwriteDatabaseId,
+        config.appwriteCollectionId,
+        queries,
+      );
+      all.push(...result.documents);
+      if (result.documents.length < PAGE) break;
+      cursor = result.documents[result.documents.length - 1].$id;
+    } catch (error) {
+      logServiceError('postService::fetchAllPostsPaginated', error);
+      break;
+    }
   }
+
+  return all;
+}
+
+export async function getUserPosts(userId: string): Promise<Post[]> {
+  return fetchAllPostsPaginated([Query.equal('userId', userId)]);
 }
 
 export async function searchPosts(query: string): Promise<Post[]> {
@@ -175,6 +199,29 @@ export async function searchPostsByTag(tag: string): Promise<Post[]> {
     return result.documents;
   } catch (error) {
     logServiceError('postService::searchPostsByTag', error);
+    throw new AppError(error);
+  }
+}
+
+export async function addRatingAndReview(
+  postId: string,
+  existingRatings: number[],
+  existingReviews: string[],
+  rating: number,
+  review: string,
+): Promise<Post> {
+  try {
+    return await getDatabases().updateDocument<Post>(
+      config.appwriteDatabaseId,
+      config.appwriteCollectionId,
+      postId,
+      {
+        ratings: [...existingRatings, rating],
+        reviews: [...existingReviews, review],
+      },
+    );
+  } catch (error) {
+    logServiceError('postService::addRatingAndReview', error);
     throw new AppError(error);
   }
 }

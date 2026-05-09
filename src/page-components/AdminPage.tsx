@@ -503,7 +503,7 @@ function AdminDashboard() {
   const loadData = useCallback(async () => {
     setLoading(true);
     const [allPosts, allAdmins, totalCount, recentCount] = await Promise.all([
-      appwriteService.getAllPosts(200),
+      appwriteService.fetchAllPostsPaginated(),
       appwriteService.getAdmins(),
       appwriteService.getTotalPostCount(),
       appwriteService.getRecentPostCount(7),

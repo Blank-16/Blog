@@ -6,30 +6,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const PAGE_SIZE = 100;
 
 async function getAllActivePosts(): Promise<Post[]> {
-  const all: Post[] = [];
-  let cursor: string | null = null;
-
-  // Appwrite hard-limits listDocuments to 100 per call — paginate until exhausted
-  while (true) {
-    const queries: string[] = [
-      Query.equal('status', 'active'),
-      Query.orderDesc('$createdAt'),
-      Query.limit(PAGE_SIZE),
-    ];
-    if (cursor) queries.push(Query.cursorAfter(cursor));
-
-    try {
-      const result = await appwriteService.getPosts(queries);
-      if (!result || result.documents.length === 0) break;
-      all.push(...result.documents);
-      if (result.documents.length < PAGE_SIZE) break;
-      cursor = result.documents[result.documents.length - 1].$id;
-    } catch {
-      break;
-    }
-  }
-
-  return all;
+  return appwriteService.fetchAllPostsPaginated([Query.equal('status', 'active')]);
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
