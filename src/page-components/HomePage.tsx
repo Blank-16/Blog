@@ -3,6 +3,7 @@ import appwriteService, { Post } from "@/lib/appwrite/appwriteService";
 import MoreStories from "@/components/client/MoreStories";
 import FeaturedPost from "@/components/client/FeaturedPost";
 import Link from "next/link";
+import AppwriteDownBanner from "@/components/ui/AppwriteDownBanner";
 
 export const revalidate = 60;
 
@@ -12,6 +13,7 @@ export default async function HomePage() {
     Query.limit(7),
     Query.orderDesc("$createdAt"),
   ]);
+  const isDown = result === null;
   const posts: Post[] = result ? result.documents : [];
   const [featured, ...rest] = posts;
 
@@ -30,13 +32,15 @@ export default async function HomePage() {
               <em>reading.</em>
             </h1>
           </div>
-          <p className="text-sm text-muted font-light max-w-[220px] leading-relaxed md:text-right md:pb-1">
+          <p className="text-sm text-muted font-light max-w-55 leading-relaxed md:text-right md:pb-1">
             Stories, perspectives, and thoughts from writers who care.
           </p>
         </div>
       </section>
 
-      {posts.length === 0 ? (
+      {isDown ? (
+        <AppwriteDownBanner />
+      ) : posts.length === 0 ? (
         <div className="max-w-5xl mx-auto px-6 py-32 text-center">
           <p className="font-display text-3xl text-muted mb-6">
             Nothing published yet.

@@ -31,6 +31,86 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    id: "medical-triage-assistant",
+    title: "Medical Triage Assistant",
+    description:
+      "Production-grade AI triage platform using RAG over clinical guidelines, featuring a 7-layer restriction pipeline, real-time SSE streaming, and OpenTelemetry tracing.",
+    challenge:
+      "Building a safe AI assistant for medical triage that strictly adheres to clinical guidelines and avoids dangerous medical advice.",
+    solution:
+      "Implemented a 7-layer restriction pipeline including a custom topic classifier and RAG similarity gate, powered by a fine-tuned gpt-4o-mini model and a robust JWT auth system.",
+    tags: ["FastAPI", "Next.js", "Python", "LangChain", "pgvector", "RAG"],
+    image: "/projects/mta.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/mta",
+    featured: true,
+    year: 2026,
+  },
+  {
+    id: "pulseway",
+    title: "Pulseway",
+    description:
+      "API health monitoring system with sub-200ms alert delivery, built with a scalable microservices architecture using AWS SQS, ECS Fargate, and RDS.",
+    challenge:
+      "Creating a highly reliable monitoring system capable of polling databases and delivering alerts with minimal latency.",
+    solution:
+      "Designed an event-driven architecture using AWS SQS FIFO queues and worker nodes for HTTP checks, deployed via Terraform on AWS ECS Fargate.",
+    tags: ["Node.js", "Express", "Next.js", "Terraform", "AWS", "PostgreSQL"],
+    image: "/projects/pulseway.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/Pulseway",
+    featured: true,
+    year: 2026,
+  },
+  {
+    id: "securechat",
+    title: "SecureChat",
+    description:
+      "End-to-end encrypted messaging application featuring browser-based X3DH-style key agreement and a symmetric double-ratchet for 1:1 conversations.",
+    challenge:
+      "Developing a secure messaging platform where the server has zero knowledge of message content, while supporting both 1:1 and group chats.",
+    solution:
+      "Implemented client-side cryptography using Web Crypto API, a double-ratchet algorithm for forward secrecy, and a group master key (GMK) model for group messaging.",
+    tags: ["React", "Express", "WebSockets", "Cryptography", "PostgreSQL"],
+    image: "/projects/securechat.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/SecureChat",
+    featured: true,
+    year: 2026,
+  },
+  {
+    id: "canvassync",
+    title: "CanvasSync",
+    description:
+      "A professional-grade collaborative drawing interface featuring a Yjs-backed canvas, WebSocket synchronization, and Redis fanout.",
+    challenge:
+      "Building a reliable real-time collaborative workspace with offline buffering and conflict resolution.",
+    solution:
+      "Utilized Yjs for CRDT-based state synchronization, backed by a Node/WebSocket server with Redis for rate limiting and multi-room fanout, and WebRTC for voice presence.",
+    tags: ["TypeScript", "Next.js", "Yjs", "WebSockets", "Redis", "WebRTC"],
+    image: "/projects/canvassync.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/CanvasSync",
+    featured: true,
+    year: 2026,
+  },
+  {
+    id: "llm-chat",
+    title: "llm-chat",
+    description:
+      "A universal TUI chat client for LLMs supporting Gemini, OpenAI, Anthropic, Ollama, DeepSeek, and Kimi with sessions, RAG, agents, and plugins.",
+    challenge:
+      "Creating a unified terminal interface to interact with multiple LLM providers seamlessly.",
+    solution:
+      "Built a robust Go-based TUI with a SQLite backing store, featuring dynamic provider switching, local directory indexing for RAG, and an extensible plugin system.",
+    tags: ["Go", "TUI", "LLM", "SQLite", "RAG"],
+    image: "/projects/llm-chat.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/llm-chat",
+    featured: true,
+    year: 2026,
+  },
+  {
     id: "blogging-platform",
     title: "Full-Stack Blogging Platform",
     description:
@@ -52,22 +132,6 @@ export const projects: Project[] = [
     repoUrl: "https://github.com/Blank-16/Blog",
     featured: true,
     year: 2026,
-  },
-  {
-    id: "java-shell",
-    title: "Java-Shell: Linux Terminal Simulator",
-    description:
-      "Cross-platform Java CLI simulating a full Linux environment with 40+ commands, built on Command & Registry patterns and containerised in a 285 MB multi-stage Docker image.",
-    challenge:
-      "Windows environments often lack the native feel of a Linux terminal. The goal was a system-level tool that bridges this gap while staying highly extensible for new commands without touching core logic.",
-    solution:
-      "I applied the Command and Registry design patterns so new CLI operations can be plugged in independently. I implemented 40+ commands covering file I/O, networking utilities, and process simulations. Multi-stage Docker builds stripped the final image to 285 MB, keeping the tool portable and lightweight across environments.",
-    tags: ["Java (LTS)", "Maven", "Docker", "OOP Design Patterns"],
-    image: "/projects/jshell.png",
-    liveUrl: undefined,
-    repoUrl: "https://github.com/Blank-16/J-Shell",
-    featured: true,
-    year: 2025,
   },
   {
     id: "ai-resume-builder",
@@ -93,6 +157,63 @@ export const projects: Project[] = [
     year: 2025,
   },
   {
+    id: "java-shell",
+    title: "Java-Shell: Linux Terminal Simulator",
+    description:
+      "Cross-platform Java CLI simulating a full Linux environment with 40+ commands, built on Command & Registry patterns and containerised in a 285 MB multi-stage Docker image.",
+    challenge:
+      "Windows environments often lack the native feel of a Linux terminal. The goal was a system-level tool that bridges this gap while staying highly extensible for new commands without touching core logic.",
+    solution:
+      "I applied the Command and Registry design patterns so new CLI operations can be plugged in independently. I implemented 40+ commands covering file I/O, networking utilities, and process simulations. Multi-stage Docker builds stripped the final image to 285 MB, keeping the tool portable and lightweight across environments.",
+    tags: ["Java (LTS)", "Maven", "Docker", "OOP Design Patterns"],
+    image: "/projects/jshell.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/J-Shell",
+    featured: false,
+    year: 2025,
+  },
+  {
+    id: "asciiplay",
+    title: "Asciiplay",
+    description:
+      "A CLI tool that converts video files into a compact ASCII animation format and renders them in a split-pane terminal UI next to the live output of a shell command.",
+    tags: ["Go", "CLI", "FFmpeg", "Terminal UI"],
+    image: "/projects/asciiplay.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/asciiplay",
+    featured: false,
+    year: 2026,
+  },
+  {
+    id: "strata",
+    title: "Strata",
+    description:
+      "A high-performance library of algorithms and data structures for competitive programming and performance-sensitive systems, with full parity across multiple languages.",
+    tags: ["Go", "C++", "Java", "Python", "TypeScript", "Algorithms"],
+    image: "/projects/strata.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/strata",
+    featured: false,
+    year: 2026,
+  },
+  {
+    id: "stock-predictor",
+    title: "Stock Predictor Model",
+    description:
+      "A machine learning model for predicting stock market trends based on historical data analysis.",
+    tags: [
+      "Python",
+      "Machine Learning",
+      "Data Analysis",
+      "Predictive Modeling",
+    ],
+    image: "/projects/stock-predictor.png",
+    liveUrl: undefined,
+    repoUrl: "https://github.com/Blank-16/stockPredModel",
+    featured: false,
+    year: 2026,
+  },
+  {
     id: "disk-usage-analyzer",
     title: "Disk Usage Analyzer CLI",
     description:
@@ -106,11 +227,11 @@ export const projects: Project[] = [
   },
 ];
 
-// Core skills shown with evidence 
+// Core skills shown with evidence
 // Keep this to 6–8 entries max;
 export type CoreSkill = {
   name: string;
-  proof: string; 
+  proof: string;
 };
 
 export const coreSkills: CoreSkill[] = [
@@ -186,13 +307,7 @@ export const skillGroups: SkillGroup[] = [
   },
   {
     context: "secondary",
-    items: [
-      "Java",
-      "Python",
-      "PostgreSQL",
-      "Redux Toolkit",
-      "Maven",
-    ],
+    items: ["Java", "Python", "PostgreSQL", "Redux Toolkit", "Maven"],
   },
   {
     context: "familiar",
@@ -210,14 +325,15 @@ export type Certificate = {
 };
 
 export const certificates: Certificate[] = [
-    {
-        id: "oracle-foundation-associate",
-        title: "Oracle Foundation Associate",
-        issuer: "Oracle",
-        date: "2026",
-        credentialUrl: "https://drive.google.com/file/d/1TzzPoM0Ww48El-rvSgs3Cyv52SpAd0vV/view?usp=sharing",
-        logoUrl: "",
-    },
+  {
+    id: "oracle-foundation-associate",
+    title: "Oracle Foundation Associate",
+    issuer: "Oracle",
+    date: "2026",
+    credentialUrl:
+      "https://drive.google.com/file/d/1TzzPoM0Ww48El-rvSgs3Cyv52SpAd0vV/view?usp=sharing",
+    logoUrl: "",
+  },
   {
     id: "frontend-react-hackerrank",
     title: "Frontend Developer (React)",
@@ -281,8 +397,8 @@ export type Achievement = {
 export const achievements: Achievement[] = [
   {
     id: "competitive-programming",
-    title: "250+ Problems Solved",
-    desc: "Solved 250+ problems across LeetCode, GeeksforGeeks, HackerRank and CodeForces.",
+    title: "350+ Problems Solved",
+    desc: "Solved 350+ problems across LeetCode, GeeksforGeeks, HackerRank and CodeForces.",
   },
   {
     id: "leetcode-rating",
