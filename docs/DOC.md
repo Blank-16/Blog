@@ -12,6 +12,9 @@ Complete technical documentation covering architecture decisions, every bug fixe
 4. [Improvements Made](#improvements-made)
 5. [What More Can Be Done](#what-more-can-be-done)
 6. [Interview Talking Points](#interview-talking-points)
+7. [System Design and CS Concepts Guide](SYSTEM_DESIGN_AND_CS_CONCEPTS.md)
+8. [High-Level Design (HLD)](HLD.md)
+9. [Low-Level Design (LLD)](LLD.md)
 
 ---
 

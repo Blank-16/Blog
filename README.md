@@ -307,3 +307,14 @@ npm run lint     # ESLint
 **Fire-and-forget view counter** — `getPostByUrlParam` increments the view count with `.catch(() => {})` after returning the post. A failed increment never delays or crashes a page load.
 
 **`MainContent` + `BlogChrome` client wrappers** — the root layout is a server component, so `lg:ml-56` (sidebar offset) and the visibility of `Footer`/`DevlogPanel` are controlled by two thin client components that read `usePathname()`. The portfolio gets zero blog chrome with no special casing in the layout server component.
+
+---
+
+## Documentation and Interview Study Guides
+
+- [High-Level Design (HLD)](docs/HLD.md): Complete HLD covering requirements, capacity calculations, edge topology, sequence diagrams, and scaling.
+- [Low-Level Design (LLD)](docs/LLD.md): Complete LLD covering service layer patterns, algorithmic specifications, data contracts, and error resilience.
+- [System Design, Architecture and Core CS Concepts](docs/SYSTEM_DESIGN_AND_CS_CONCEPTS.md): Technical reference covering system design, networking, backend and frontend engineering, and computer science concepts mapped to this codebase.
+- [Project Documentation](docs/DOC.md): Architecture overview, design decisions, bug fixes, and interview talking points.
+- [Engineering Decisions](docs/ENGINEERING_DECISIONS.md): Why this, not that rationale for every architectural choice.
+- [Codebase Guide](docs/GUIDE.md): File-by-file walkthrough of the entire application.
